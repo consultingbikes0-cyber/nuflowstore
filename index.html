@@ -581,13 +581,9 @@ function desconBling(){localStorage.removeItem("bl_conn");initBling();}
 
 function conectarBling(){
   var state=Math.random().toString(36).substr(2,16);
-localStorage.setItem("bl_state",state);
-var url="https://www.bling.com.br/Api/v3/oauth/authorize?response_type=code&client_id="+BLING_CID+"&state="+state;
-  window.open(url,"_blank","width=600,height=700");
-  setTimeout(function(){
-    var code=prompt("Apos autorizar no Bling, cole o codigo da URL (valor apos ?code=):");
-    if(code&&code.trim())trocarCodigo(code.trim());
-  },1500);
+  localStorage.setItem("bl_state",state);
+  var url="https://www.bling.com.br/Api/v3/oauth/authorize?response_type=code&client_id="+BLING_CID+"&state="+state;
+  window.location.href=url;
 }
 
 async function trocarCodigo(code){
@@ -646,16 +642,7 @@ function renderBlingVendas(vendas){
   html+="</tbody></table>";
   lista.innerHTML=html;
 }
-(function(){
-  var params=new URLSearchParams(window.location.search);
-  var code=params.get("code");
-  var state=params.get("state");
-  if(code&&state){
-    history.replaceState({},"","/");
-    showTab("bling");
-    trocarCodigo(code);
-  }
-})();
+
 calcPreco();
 renderFin();
 showTab("calc");
