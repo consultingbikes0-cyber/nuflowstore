@@ -139,88 +139,49 @@ tbody tr:last-child td{border-bottom:none}
   </div>
 
   <div class="card">
-    <div class="sub-tabs">
-      <button class="sub-tab active" id="stab-calc" onclick="showSubTab('calc')">Calculadora</button>
-      <button class="sub-tab" id="stab-vender" onclick="showSubTab('vender')">Vender por</button>
+    <div class="card-title">Calculadora</div>
+    <div class="g2" style="margin-bottom:10px">
+      <div class="field"><label>Custo do produto (R$)</label><input type="number" id="custo" value="200" min="0" step="0.01" oninput="calcPreco()"></div>
+      <div class="field"><label>IPI (%)</label><input type="number" id="ipi" value="0" min="0" max="100" step="0.1" oninput="calcPreco()"></div>
     </div>
-
-    <div id="spane-calc" class="sub-pane active">
-      <div class="g2" style="margin-bottom:10px">
-        <div class="field"><label>Custo do produto (R$)</label><input type="number" id="custo" value="200" min="0" step="0.01" oninput="calcPreco()"></div>
-        <div class="field"><label>IPI (%)</label><input type="number" id="ipi" value="0" min="0" max="100" step="0.1" oninput="calcPreco()"></div>
+    <div class="field" style="margin-bottom:10px">
+      <label>Origem do produto</label>
+      <div class="toggle-group">
+        <button id="btn-MG" class="toggle-btn active" onclick="setOrigem('MG')">Minas Gerais</button>
+        <button id="btn-SP" class="toggle-btn" onclick="setOrigem('SP')">Sao Paulo</button>
+        <button id="btn-SC" class="toggle-btn" onclick="setOrigem('SC')">Santa Catarina</button>
+        <button id="btn-ES" class="toggle-btn" onclick="setOrigem('ES')">Espirito Santo</button>
       </div>
-      <div class="field" style="margin-bottom:10px">
-        <label>Origem do produto</label>
-        <div class="toggle-group">
-          <button id="btn-MG" class="toggle-btn active" onclick="setOrigem('MG')">Minas Gerais</button>
-          <button id="btn-SP" class="toggle-btn" onclick="setOrigem('SP')">Sao Paulo</button>
-          <button id="btn-SC" class="toggle-btn" onclick="setOrigem('SC')">Santa Catarina</button>
-          <button id="btn-ES" class="toggle-btn" onclick="setOrigem('ES')">Espirito Santo</button>
-        </div>
-      </div>
-      <div class="g2">
-        <div class="field"><label>Margem de lucro desejada (%)</label><input type="number" id="margem" value="30" min="1" max="99" step="0.5" oninput="calcPreco()"></div>
-        <div class="field">
-          <label>Forma de pagamento</label>
-          <select id="pagto" onchange="calcPreco()">
-            <option value="0">Pix / dinheiro (0%)</option>
-            <option value="1.00">Debito (1,00%)</option>
-            <option value="3.05">Credito a vista (3,05%)</option>
-            <option value="4.28">Credito 2x (4,28%)</option>
-            <option value="5.00">Credito 3x (5,00%)</option>
-            <option value="5.71">Credito 4x (5,71%)</option>
-            <option value="6.41">Credito 5x (6,41%)</option>
-            <option value="7.10">Credito 6x (7,10%)</option>
-            <option value="8.19">Credito 7x (8,19%)</option>
-            <option value="8.88">Credito 8x (8,88%)</option>
-            <option value="9.55">Credito 9x (9,55%)</option>
-            <option value="10.22">Credito 10x (10,22%)</option>
-            <option value="10.88">Credito 11x (10,88%)</option>
-            <option value="11.54">Credito 12x (11,54%)</option>
-          </select>
-        </div>
-      </div>
-      <div id="alerta-margem" style="margin-top:10px"></div>
     </div>
-
-    <div id="spane-vender" class="sub-pane">
-      <div class="g2" style="margin-bottom:10px">
-        <div class="field"><label>Custo do produto (R$)</label><input type="number" id="vp-custo" value="200" min="0" step="0.01" oninput="calcVenderPor()"></div>
-        <div class="field"><label>IPI (%)</label><input type="number" id="vp-ipi" value="0" min="0" max="100" step="0.1" oninput="calcVenderPor()"></div>
+    <div class="g2" style="margin-bottom:10px">
+      <div class="field"><label>Margem de lucro desejada (%)</label><input type="number" id="margem" value="30" min="1" max="99" step="0.5" oninput="calcPreco()"></div>
+      <div class="field">
+        <label>Forma de pagamento</label>
+        <select id="pagto" onchange="calcPreco()">
+          <option value="0">Pix / dinheiro (0%)</option>
+          <option value="1.00">Debito (1,00%)</option>
+          <option value="3.05">Credito a vista (3,05%)</option>
+          <option value="4.28">Credito 2x (4,28%)</option>
+          <option value="5.00">Credito 3x (5,00%)</option>
+          <option value="5.71">Credito 4x (5,71%)</option>
+          <option value="6.41">Credito 5x (6,41%)</option>
+          <option value="7.10">Credito 6x (7,10%)</option>
+          <option value="8.19">Credito 7x (8,19%)</option>
+          <option value="8.88">Credito 8x (8,88%)</option>
+          <option value="9.55">Credito 9x (9,55%)</option>
+          <option value="10.22">Credito 10x (10,22%)</option>
+          <option value="10.88">Credito 11x (10,88%)</option>
+          <option value="11.54">Credito 12x (11,54%)</option>
+        </select>
       </div>
-      <div class="field" style="margin-bottom:10px">
-        <label>Origem do produto</label>
-        <div class="toggle-group">
-          <button id="vp-btn-MG" class="toggle-btn active" onclick="setOrigemVP('MG')">Minas Gerais</button>
-          <button id="vp-btn-SP" class="toggle-btn" onclick="setOrigemVP('SP')">Sao Paulo</button>
-          <button id="vp-btn-SC" class="toggle-btn" onclick="setOrigemVP('SC')">Santa Catarina</button>
-          <button id="vp-btn-ES" class="toggle-btn" onclick="setOrigemVP('ES')">Espirito Santo</button>
-        </div>
-      </div>
-      <div class="g2" style="margin-bottom:10px">
-        <div class="field"><label>Valor de venda (R$)</label><input type="number" id="vp-preco" value="300" min="0" step="0.01" oninput="calcVenderPor()"></div>
-        <div class="field">
-          <label>Forma de pagamento</label>
-          <select id="vp-pagto" onchange="calcVenderPor()">
-            <option value="0">Pix / dinheiro (0%)</option>
-            <option value="1.00">Debito (1,00%)</option>
-            <option value="3.05">Credito a vista (3,05%)</option>
-            <option value="4.28">Credito 2x (4,28%)</option>
-            <option value="5.00">Credito 3x (5,00%)</option>
-            <option value="5.71">Credito 4x (5,71%)</option>
-            <option value="6.41">Credito 5x (6,41%)</option>
-            <option value="7.10">Credito 6x (7,10%)</option>
-            <option value="8.19">Credito 7x (8,19%)</option>
-            <option value="8.88">Credito 8x (8,88%)</option>
-            <option value="9.55">Credito 9x (9,55%)</option>
-            <option value="10.22">Credito 10x (10,22%)</option>
-            <option value="10.88">Credito 11x (10,88%)</option>
-            <option value="11.54">Credito 12x (11,54%)</option>
-          </select>
-        </div>
-      </div>
-      <div id="vp-resultado"></div>
     </div>
+    <div class="sep"></div>
+    <div class="field" style="margin-bottom:8px">
+      <label style="color:var(--text);font-weight:500">Simular: vender por (R$)</label>
+      <input type="number" id="vp-preco" min="0" step="0.01" oninput="calcVenderPor()" placeholder="Digite o preco de venda para simular">
+    </div>
+    <div id="vp-resultado"></div>
+    <div id="alerta-margem" style="margin-top:10px"></div>
   </div>
 
   <div class="card" id="resultado-card">
@@ -344,7 +305,7 @@ var SB_URL="https://aqnuesljghouxjztxyoy.supabase.co";
 var SB_KEY="sb_publishable_XdfMvdPp2YKLRdvEedEOvA_Nce082qP";
 var BLING_CID="47842f384855dc5bc7aa286dfdb85776d9694b43";
 var MARGEM_MIN=15;
-var origem="MG",origemVP="MG",autoSug=0,autoCusto=0,xmlProds=[];
+var origem="MG",autoSug=0,autoCusto=0,xmlProds=[];
 
 function fmt(v){return"R$ "+(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtp(v){return(v||0).toFixed(1).replace(".",",")+"%";}
@@ -364,27 +325,14 @@ function showTab(t){
   if(t==="bling")initBling();
 }
 
-function showSubTab(t){
-  ["calc","vender"].forEach(function(id){
-    var tab=document.getElementById("stab-"+id);
-    var pane=document.getElementById("spane-"+id);
-    if(tab)tab.classList.toggle("active",id===t);
-    if(pane){pane.style.display=(id===t?"block":"none");pane.classList.toggle("active",id===t);}
-  });
-  var rc=document.getElementById("resultado-card");
-  if(rc)rc.style.display=(t==="calc"?"block":"none");
-}
+
 
 function setOrigem(o){
   origem=o;
   ["MG","SP","SC","ES"].forEach(function(e){var b=document.getElementById("btn-"+e);if(b)b.classList.toggle("active",e===o);});
   calcPreco();
 }
-function setOrigemVP(o){
-  origemVP=o;
-  ["MG","SP","SC","ES"].forEach(function(e){var b=document.getElementById("vp-btn-"+e);if(b)b.classList.toggle("active",e===o);});
-  calcVenderPor();
-}
+
 
 function custoReal(custo,ipiPct,uf){
   var ipiVl=custo*(ipiPct/100);
@@ -425,15 +373,16 @@ function calcPreco(){
   var ve=document.getElementById("venda"),ce=document.getElementById("custo-venda");
   if(!ve.dataset.manual)ve.placeholder=fmt(pSug);
   if(!ce.dataset.manual)ce.placeholder=fmt(c.total);
+  calcVenderPor();
   calcDist();
 }
 
 function calcVenderPor(){
-  var custo=parseFloat(document.getElementById("vp-custo").value)||0;
-  var ipiPct=parseFloat(document.getElementById("vp-ipi").value)||0;
+  var custo=parseFloat(document.getElementById("custo").value)||0;
+  var ipiPct=parseFloat(document.getElementById("ipi").value)||0;
   var preco=parseFloat(document.getElementById("vp-preco").value)||0;
-  var taxaPct=parseFloat(document.getElementById("vp-pagto").value)||0;
-  var c=custoReal(custo,ipiPct,origemVP);
+  var taxaPct=parseFloat(document.getElementById("pagto").value)||0;
+  var c=custoReal(custo,ipiPct,origem);
   var taxa=taxaPct/100;
   var impVl=preco*SIMPLES,cartVl=preco*taxa;
   var lucro=preco-c.total-impVl-cartVl;
@@ -628,14 +577,14 @@ function selProd(i){
   document.getElementById("custo").value=p.custo.toFixed(2);
   document.getElementById("ipi").value=0;
   setOrigem(["MG","SP","SC","ES"].indexOf(p.uf)>=0?p.uf:"SP");
-  showSubTab("calc");calcPreco();
+  calcPreco();
 }
 
 function usarProd(custo,uf,ipi){
   document.getElementById("custo").value=custo.toFixed(2);
   document.getElementById("ipi").value=0;
   setOrigem(["MG","SP","SC","ES"].indexOf(uf)>=0?uf:"SP");
-  showTab("calc");showSubTab("calc");calcPreco();
+  showTab("calc");calcPreco();
 }
 
 function clearNF(){
@@ -747,7 +696,6 @@ function renderBlingVendas(vendas){
   else{showTab("calc");}
 })();
 calcPreco();
-calcVenderPor();
 renderFin();
 </script>
 </body>
