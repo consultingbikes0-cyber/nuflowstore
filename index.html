@@ -594,7 +594,7 @@ async function trocarCodigo(code){
     var data=await res.json();
     if(!res.ok)throw new Error(data.error||"Erro");
     localStorage.setItem("bl_conn","1");
-    initBling();sincronizarVendas();
+    initBling();
   }catch(e){
     sa.innerHTML="<div class='alert alert-warn'>Erro: "+e.message+"</div><button class='btn btn-primary' onclick='conectarBling()' style='margin-top:8px'>Tentar novamente</button>";
   }
@@ -648,8 +648,7 @@ renderFin();
 (function(){
   var params=new URLSearchParams(window.location.search);
   var code=params.get("code");
-  var state=params.get("state");
-  if(code&&state){
+  if(code){
     history.replaceState({},"","/");
     showTab("bling");
     trocarCodigo(code);
