@@ -154,43 +154,54 @@ tbody tr:last-child td{border-bottom:none}
       </div>
     </div>
     <div class="g2" style="margin-bottom:10px">
-      <div class="field"><label>Margem de lucro desejada (%)</label><input type="number" id="margem" value="30" min="1" max="99" step="0.5" oninput="calcPreco()"></div>
       <div class="field">
         <label>Forma de pagamento</label>
         <select id="pagto" onchange="calcPreco()">
           <option value="0">Pix / dinheiro (0%)</option>
-          <option value="1.00">Debito (1,00%)</option>
-          <option value="3.05">Credito a vista (3,05%)</option>
-          <option value="4.28">Credito 2x (4,28%)</option>
-          <option value="5.00">Credito 3x (5,00%)</option>
-          <option value="5.71">Credito 4x (5,71%)</option>
-          <option value="6.41">Credito 5x (6,41%)</option>
-          <option value="7.10">Credito 6x (7,10%)</option>
-          <option value="8.19">Credito 7x (8,19%)</option>
-          <option value="8.88">Credito 8x (8,88%)</option>
-          <option value="9.55">Credito 9x (9,55%)</option>
-          <option value="10.22">Credito 10x (10,22%)</option>
-          <option value="10.88">Credito 11x (10,88%)</option>
-          <option value="11.54">Credito 12x (11,54%)</option>
+          <option value="0.99">Debito presencial (0,99%)</option>
+          <option value="2.99">Cartao presencial 1x (2,99%)</option>
+          <option value="4.09">Cartao presencial 2x (4,09%)</option>
+          <option value="4.78">Cartao presencial 3x (4,78%)</option>
+          <option value="5.47">Cartao presencial 4x (5,47%)</option>
+          <option value="6.14">Cartao presencial 5x (6,14%)</option>
+          <option value="6.81">Cartao presencial 6x (6,81%)</option>
+          <option value="7.67">Cartao presencial 7x (7,67%)</option>
+          <option value="8.33">Cartao presencial 8x (8,33%)</option>
+          <option value="8.98">Cartao presencial 9x (8,98%)</option>
+          <option value="9.62">Cartao presencial 10x (9,62%)</option>
+          <option value="10.26">Cartao presencial 11x (10,26%)</option>
+          <option value="10.90">Cartao presencial 12x (10,90%)</option>
+          <option value="7.39">Cartao online 1x (7,39%)</option>
+          <option value="8.80">Cartao online 2x (8,80%)</option>
+          <option value="10.18">Cartao online 3x (10,18%)</option>
+          <option value="11.54">Cartao online 4x (11,54%)</option>
+          <option value="12.87">Cartao online 5x (12,87%)</option>
+          <option value="14.17">Cartao online 6x (14,17%)</option>
+          <option value="15.45">Cartao online 7x (15,45%)</option>
+          <option value="16.71">Cartao online 8x (16,71%)</option>
+          <option value="17.94">Cartao online 9x (17,94%)</option>
+          <option value="19.14">Cartao online 10x (19,14%)</option>
+          <option value="20.33">Cartao online 11x (20,33%)</option>
+          <option value="21.49">Cartao online 12x (21,49%)</option>
         </select>
       </div>
     </div>
-    <div class="sep"></div>
-    <div class="field" style="margin-bottom:8px">
-      <label style="color:var(--text);font-weight:500">Simular: vender por (R$)</label>
-      <input type="number" id="vp-preco" min="0" step="0.01" oninput="calcVenderPor()" placeholder="Digite o preco de venda para simular">
+    <div style="margin-top:14px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:14px">
+      <div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:10px">Simular: vender por</div>
+      <div class="field" style="margin-bottom:10px">
+        <label>Qual preco voce quer cobrar? (R$)</label>
+        <input type="number" id="vp-preco" min="0" step="0.01" oninput="calcVenderPor()" placeholder="Digite o preco de venda">
+      </div>
+      <div id="vp-resultado"></div>
     </div>
-    <div id="vp-resultado"></div>
     <div id="alerta-margem" style="margin-top:10px"></div>
   </div>
 
   <div class="card" id="resultado-card">
     <div class="card-title">Resultado</div>
-    <div class="g4" style="margin-bottom:14px">
+    <div class="g2" style="margin-bottom:14px">
       <div class="metric"><div class="lbl">Custo real entrada</div><div class="val b" id="r-custo-real">-</div></div>
-      <div class="metric"><div class="lbl">Preco minimo</div><div class="val" id="r-preco-min">-</div></div>
-      <div class="metric"><div class="lbl">Preco sugerido</div><div class="val g" id="r-preco-sug">-</div></div>
-      <div class="metric"><div class="lbl">Desconto maximo</div><div class="val r" id="r-desc-max">-</div></div>
+      <div class="metric"><div class="lbl">Preco minimo (margem 15%)</div><div class="val g" id="r-preco-min">-</div></div>
     </div>
     <div id="r-detalhe"></div>
     <div id="r-difal-info"></div>
@@ -344,26 +355,21 @@ function custoReal(custo,ipiPct,uf){
 function calcPreco(){
   var custo=parseFloat(document.getElementById("custo").value)||0;
   var ipiPct=parseFloat(document.getElementById("ipi").value)||0;
-  var margem=parseFloat(document.getElementById("margem").value)||0;
   var taxaPct=parseFloat(document.getElementById("pagto").value)||0;
   var c=custoReal(custo,ipiPct,origem);
   var taxa=taxaPct/100;
   var pMin=c.total/((1-SIMPLES)*(1-taxa));
-  var pSug=c.total/((1-SIMPLES)*(1-taxa)*(1-margem/100));
-  var dMax=(pSug-pMin)/pSug*100;
-  autoSug=pSug;autoCusto=c.total;
+  autoSug=pMin;autoCusto=c.total;
   document.getElementById("r-custo-real").textContent=fmt(c.total);
   document.getElementById("r-preco-min").textContent=fmt(pMin);
-  document.getElementById("r-preco-sug").textContent=fmt(pSug);
-  document.getElementById("r-desc-max").textContent=dMax.toFixed(1).replace(".",",")+"%";
-  var impVl=pSug*SIMPLES,cartVl=pSug*taxa,lucroVl=pSug-c.total-impVl-cartVl;
-  var margemEf=pSug>0?lucroVl/pSug*100:0;
+  var impVl=pMin*SIMPLES,cartVl=pMin*taxa,lucroVl=pMin-c.total-impVl-cartVl;
+  var margemEf=pMin>0?lucroVl/pMin*100:0;
   var rows=[["Custo de aquisicao",fmt(custo)]];
   if(c.ipiVl>0)rows.push(["IPI ("+ipiPct+"%)",fmt(c.ipiVl)]);
-  if(c.difalVl>0)rows.push(["DIFAL ("+c.difalPct*100+"%)",fmt(c.difalVl)]);
+  if(c.difalVl>0)rows.push(["DIFAL ("+(c.difalPct*100)+"%)",fmt(c.difalVl)]);
   rows.push(["Simples Nacional (4%)",fmt(impVl)]);
   if(taxa>0)rows.push(["Taxa pagamento ("+taxaPct+"%)",fmt(cartVl)]);
-  rows.push(["Lucro estimado",fmt(lucroVl)]);
+  rows.push(["Lucro minimo (15%)",fmt(lucroVl)]);
   document.getElementById("r-detalhe").innerHTML=rows.map(function(r){return "<div class='drow'><span class='k'>"+r[0]+"</span><span class='v'>"+r[1]+"</span></div>";}).join("");
   document.getElementById("r-difal-info").innerHTML=c.difalVl>0?"<div class='alert alert-warn' style='margin-top:10px'>DIFAL de "+(c.difalPct*100)+"% aplicado ("+origem+" para MG).</div>":"";
   var al=document.getElementById("alerta-margem");
@@ -371,7 +377,7 @@ function calcPreco(){
   else if(margemEf<MARGEM_MIN){al.innerHTML="<div class='alert alert-warn'>Margem baixa: "+fmtp(margemEf)+" (minimo recomendado: "+MARGEM_MIN+"%). Revise o preco.</div>";}
   else{al.innerHTML="";}
   var ve=document.getElementById("venda"),ce=document.getElementById("custo-venda");
-  if(!ve.dataset.manual)ve.placeholder=fmt(pSug);
+  if(!ve.dataset.manual)ve.placeholder=fmt(pMin);
   if(!ce.dataset.manual)ce.placeholder=fmt(c.total);
   calcVenderPor();
   calcDist();
@@ -381,6 +387,7 @@ function calcVenderPor(){
   var custo=parseFloat(document.getElementById("custo").value)||0;
   var ipiPct=parseFloat(document.getElementById("ipi").value)||0;
   var preco=parseFloat(document.getElementById("vp-preco").value)||0;
+  if(!preco){document.getElementById("vp-resultado").innerHTML="";return;}
   var taxaPct=parseFloat(document.getElementById("pagto").value)||0;
   var c=custoReal(custo,ipiPct,origem);
   var taxa=taxaPct/100;
@@ -388,19 +395,19 @@ function calcVenderPor(){
   var lucro=preco-c.total-impVl-cartVl;
   var margemEf=preco>0?lucro/preco*100:0;
   var cor=lucro<0?"var(--red)":margemEf<MARGEM_MIN?"var(--amber)":"var(--green)";
-  var status=lucro<0?"PREJUIZO":margemEf<MARGEM_MIN?"MARGEM BAIXA":"VIAVEL";
+  var status=lucro<0?"PREJUIZO":margemEf<MARGEM_MIN?"MARGEM BAIXA - abaixo de 15%":"VIAVEL";
   var el=document.getElementById("vp-resultado");
-  el.innerHTML="<div style='background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:4px'>"
+  el.innerHTML="<div style='border-radius:8px;padding:12px;background:rgba(0,0,0,.2);margin-top:4px'>"
     +"<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:10px'>"
-    +"<span style='font-size:13px;color:var(--text2)'>Resultado para "+fmt(preco)+"</span>"
-    +"<span style='font-size:12px;font-weight:600;color:"+cor+";background:rgba(0,0,0,.3);padding:3px 10px;border-radius:5px'>"+status+"</span>"
+    +"<span style='font-size:13px;color:var(--text2)'>Vendendo por "+fmt(preco)+"</span>"
+    +"<span style='font-size:12px;font-weight:700;color:"+cor+";padding:3px 10px;border-radius:5px;border:1px solid "+cor+"'>"+status+"</span>"
     +"</div>"
     +"<div class='drow'><span class='k'>Custo real entrada</span><span class='v'>"+fmt(c.total)+"</span></div>"
     +"<div class='drow'><span class='k'>Simples Nacional (4%)</span><span class='v'>"+fmt(impVl)+"</span></div>"
-    +"<div class='drow'><span class='k'>Taxa pagamento ("+taxaPct+"%)</span><span class='v'>"+fmt(cartVl)+"</span></div>"
-    +"<div class='drow'><span class='k'>Lucro</span><span class='v' style='color:"+cor+"'>"+fmt(lucro)+"</span></div>"
-    +"<div class='drow'><span class='k'>Margem efetiva</span><span class='v' style='color:"+cor+"'>"+fmtp(margemEf)+"</span></div>"
-    +"<div class='margem-bar'><div class='margem-fill' style='width:"+Math.max(0,Math.min(100,margemEf)).toFixed(1)+"%;background:"+cor+"'></div></div>"
+    +(taxa>0?"<div class='drow'><span class='k'>Taxa pagamento ("+taxaPct+"%)</span><span class='v'>"+fmt(cartVl)+"</span></div>":"")
+    +"<div class='drow'><span class='k'>Lucro</span><span class='v' style='color:"+cor+";font-weight:700'>"+fmt(lucro)+"</span></div>"
+    +"<div class='drow'><span class='k'>Margem efetiva</span><span class='v' style='color:"+cor+";font-weight:700'>"+fmtp(margemEf)+"</span></div>"
+    +"<div class='margem-bar' style='margin-top:8px'><div class='margem-fill' style='width:"+Math.max(0,Math.min(100,margemEf)).toFixed(1)+"%;background:"+cor+"'></div></div>"
     +"</div>";
 }
 
