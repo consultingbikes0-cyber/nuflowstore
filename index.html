@@ -646,7 +646,16 @@ function renderBlingVendas(vendas){
   html+="</tbody></table>";
   lista.innerHTML=html;
 }
-
+(function(){
+  var params=new URLSearchParams(window.location.search);
+  var code=params.get("code");
+  var state=params.get("state");
+  if(code&&state){
+    history.replaceState({},"","/");
+    showTab("bling");
+    trocarCodigo(code);
+  }
+})();
 calcPreco();
 renderFin();
 showTab("calc");
