@@ -645,7 +645,18 @@ function renderBlingVendas(vendas){
 
 calcPreco();
 renderFin();
-showTab("calc");
+(function(){
+  var params=new URLSearchParams(window.location.search);
+  var code=params.get("code");
+  var state=params.get("state");
+  if(code&&state){
+    history.replaceState({},"","/");
+    showTab("bling");
+    trocarCodigo(code);
+  }else{
+    showTab("calc");
+  }
+})();
 </script>
 </body>
 </html>
