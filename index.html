@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Precifi - Nuflow</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f0f0f;--surface:#171717;--surface2:#1f1f1f;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--text:#f0f0f0;--text2:#888;--text3:#444;--green:#4ade80;--green-dim:rgba(74,222,128,0.1);--blue:#60a5fa;--blue-dim:rgba(96,165,250,0.1);--amber:#fbbf24;--amber-dim:rgba(251,191,36,0.1);--red:#f87171;--purple:#a78bfa;--purple-dim:rgba(167,139,250,0.1)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;height:52px;position:sticky;top:0;background:var(--bg);z-index:100}
+.logo{font-family:"Syne",sans-serif;font-size:15px;font-weight:700;letter-spacing:.05em}
+.logo span{color:var(--green)}
+.nav-tabs{display:flex;gap:2px;margin-left:auto}
+.nav-tab{padding:6px 14px;font-size:13px;border:1px solid transparent;border-radius:6px;background:none;color:var(--text2);cursor:pointer}
+.nav-tab:hover{color:var(--text);background:var(--surface)}
+.nav-tab.active{color:var(--text);background:var(--surface2);border-color:var(--border2)}
+main{max-width:980px;margin:0 auto;padding:1.5rem 2rem}
+.pane{display:none}.pane.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+.card-title{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:1rem}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;color:var(--text2)}
+.field input,.field select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:14px;color:var(--text);font-family:"DM Sans",sans-serif;width:100%}
+.field select option{background:#1f1f1f}
+.toggle-group{display:flex;gap:5px;flex-wrap:wrap}
+.toggle-btn{flex:1;min-width:80px;padding:8px 6px;font-size:13px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text2);cursor:pointer;text-align:center}
+.toggle-btn.active{background:var(--blue-dim);border-color:var(--blue);color:var(--blue);font-weight:500}
+.metric{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.metric .lbl{font-size:11px;color:var(--text3);margin-bottom:3px;font-weight:500}
+.metric .val{font-size:19px;font-weight:600;font-family:"Syne",sans-serif}
+.metric .val.g{color:var(--green)}.metric .val.r{color:var(--red)}.metric .val.b{color:var(--blue)}
+.drow{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.drow:last-child{border-bottom:none}
+.drow .k{color:var(--text2)}.drow .v{font-weight:500}
+.dist-bar{display:flex;border-radius:4px;overflow:hidden;height:6px;margin:10px 0 12px}
+.dist-seg{height:100%;transition:width .3s}
+.dist-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0}
+.dot{width:7px;height:7px;border-radius:50%;margin-right:8px;flex-shrink:0}
+.dist-name{display:flex;align-items:center;font-size:13px;color:var(--text2)}
+.dist-val{font-size:13px;font-weight:500}
+.sep{height:1px;background:var(--border);margin:8px 0}
+.alert{font-size:12px;padding:9px 13px;border-radius:8px;margin-bottom:8px}
+.alert-warn{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(251,191,36,.2)}
+.alert-ok{background:var(--green-dim);color:var(--green);border:1px solid rgba(74,222,128,.2)}
+.alert-info{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,.2)}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:5px;font-weight:500}
+.badge-mg{background:var(--green-dim);color:var(--green)}
+.badge-fora{background:var(--blue-dim);color:var(--blue)}
+.btn{padding:8px 16px;font-size:13px;font-weight:500;border:1px solid var(--border2);border-radius:8px;background:transparent;color:var(--text);cursor:pointer}
+.btn:hover{background:var(--surface2)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:var(--green);color:#000;border-color:var(--green)}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:6px}
+.btn-purple{background:var(--purple-dim);color:var(--purple);border-color:rgba(167,139,250,.3)}
+.btn-blue{background:var(--blue-dim);color:var(--blue);border-color:rgba(96,165,250,.3)}
+.drop-zone{border:1.5px dashed var(--border2);border-radius:10px;padding:2rem 1rem;text-align:center;cursor:pointer;margin-bottom:1rem}
+.drop-zone p{font-size:13px;color:var(--text2);margin-top:5px}
+.drop-zone strong{color:var(--text);font-weight:500}
+.drop-icon{width:34px;height:34px;margin:0 auto 6px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center}
+textarea{width:100%;min-height:100px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;font-family:monospace;color:var(--text2);resize:vertical}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+thead th{font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text3);padding:7px 10px;border-bottom:1px solid var(--border);text-align:left}
+tbody td{padding:9px 10px;border-bottom:1px solid var(--border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+.or-row{display:flex;align-items:center;gap:10px;margin:.75rem 0}
+.or-line{flex:1;height:1px;background:var(--border)}
+.or-lbl{font-size:11px;color:var(--text3)}
+.search-row{display:flex;gap:8px}
+.search-row input{flex:1}
+.spin{display:inline-block;width:11px;height:11px;border:1.5px solid var(--border2);border-top-color:var(--purple);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.price-result{font-size:11px;margin-top:3px}
+.price-result.found{color:var(--green)}.price-result.searching{color:var(--amber)}.price-result.err{color:var(--red)}
+.fin-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:1rem}
+.fin-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px}
+.fin-card .lbl{font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;font-weight:600}
+.fin-card .val{font-size:22px;font-weight:700;font-family:"Syne",sans-serif}
+.fin-card .sub{font-size:12px;color:var(--text2);margin-top:2px}
+.socio-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.socio-name{font-size:13px;font-weight:500}
+.socio-saldo{font-size:20px;font-weight:700;font-family:"Syne",sans-serif;color:var(--green)}
+.socio-pct{font-size:11px;color:var(--text3)}
+.retirada-form{display:flex;gap:8px;margin-top:8px}
+.retirada-form input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text)}
+.venda-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.venda-row:last-child{border-bottom:none}
+.venda-data{color:var(--text3);font-size:11px}
+.empty-state{text-align:center;padding:2rem;color:var(--text3);font-size:13px}
+.xml-produtos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:8px}
+.xml-prod-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer}
+.xml-prod-card.selected{border-color:var(--green);background:var(--green-dim)}
+.xml-prod-name{font-size:12px;font-weight:500;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xml-prod-info{font-size:11px;color:var(--text2)}
+@media(max-width:600px){main{padding:1rem}.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}header{padding:0 1rem}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">PRECIFI<span>.</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tab-calc" onclick="showTab('calc')">Precifica&#231;&#227;o</button>
+    <button class="nav-tab" id="tab-nf" onclick="showTab('nf')">Importar NF-e</button>
+    <button class="nav-tab" id="tab-fin" onclick="showTab('fin')">Financeiro</button>
+    <button class="nav-tab" id="tab-bling" onclick="showTab('bling')">Bling</button>
+  </div>
+</header>
+<main>
+
+<div id="pane-calc" class="pane active">
+  <div class="card">
+    <div class="card-title">Pesquisa de pre&#231;o de mercado</div>
+    <div class="field">
+      <label>Digite o produto para pesquisar</label>
+      <div class="search-row">
+        <input type="text" id="busca-produto" placeholder="ex: Cubo traseiro Session 28f 12x148">
+        <button class="btn btn-purple" id="btn-busca" onclick="pesquisarPrecoBusca()">Pesquisar</button>
+      </div>
+      <div id="busca-resultado" class="price-result" style="margin-top:6px"></div>
+    </div>
+  </div>
+
+  <div id="xml-produtos-section" style="display:none" class="card">
+    <div class="card-title">Produtos da nota - clique para usar</div>
+    <div class="xml-produtos-grid" id="xml-produtos-grid"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Calculadora</div>
+    <div class="g2" style="margin-bottom:10px">
+      <div class="field"><label>Custo do produto (R$)</label><input type="number" id="custo" value="200" min="0" step="0.01" oninput="calcPreco()"></div>
+      <div class="field"><label>IPI (%)</label><input type="number" id="ipi" value="0" min="0" max="100" step="0.1" oninput="calcPreco()"></div>
+    </div>
+    <div class="field" style="margin-bottom:10px">
+      <label>Origem do produto</label>
+      <div class="toggle-group">
+        <button id="btn-MG" class="toggle-btn active" onclick="setOrigem('MG')">Minas Gerais</button>
+        <button id="btn-SP" class="toggle-btn" onclick="setOrigem('SP')">S&#227;o Paulo</button>
+        <button id="btn-SC" class="toggle-btn" onclick="setOrigem('SC')">Santa Catarina</button>
+        <button id="btn-ES" class="toggle-btn" onclick="setOrigem('ES')">Esp&#237;rito Santo</button>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="field"><label>Margem de lucro desejada (%)</label><input type="number" id="margem" value="30" min="1" max="99" step="0.5" oninput="calcPreco()"></div>
+      <div class="field">
+        <label>Forma de pagamento</label>
+        <select id="pagto" onchange="calcPreco()">
+          <option value="0">Pix / dinheiro (0%)</option>
+          <option value="1.00">D&#233;bito (1,00%)</option>
+          <option value="3.05">Cr&#233;dito &#224; vista (3,05%)</option>
+          <option value="4.28">Cr&#233;dito 2x (4,28%)</option>
+          <option value="5.00">Cr&#233;dito 3x (5,00%)</option>
+          <option value="5.71">Cr&#233;dito 4x (5,71%)</option>
+          <option value="6.41">Cr&#233;dito 5x (6,41%)</option>
+          <option value="7.10">Cr&#233;dito 6x (7,10%)</option>
+          <option value="8.19">Cr&#233;dito 7x (8,19%)</option>
+          <option value="8.88">Cr&#233;dito 8x (8,88%)</option>
+          <option value="9.55">Cr&#233;dito 9x (9,55%)</option>
+          <option value="10.22">Cr&#233;dito 10x (10,22%)</option>
+          <option value="10.88">Cr&#233;dito 11x (10,88%)</option>
+          <option value="11.54">Cr&#233;dito 12x (11,54%)</option>
+          <option value="12.69">Cr&#233;dito 13x (12,69%)</option>
+          <option value="13.33">Cr&#233;dito 14x (13,33%)</option>
+          <option value="13.97">Cr&#233;dito 15x (13,97%)</option>
+          <option value="14.60">Cr&#233;dito 16x (14,60%)</option>
+          <option value="15.22">Cr&#233;dito 17x (15,22%)</option>
+          <option value="15.84">Cr&#233;dito 18x (15,84%)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Resultado</div>
+    <div class="g4" style="margin-bottom:14px">
+      <div class="metric"><div class="lbl">Custo real entrada</div><div class="val b" id="r-custo-real">-</div></div>
+      <div class="metric"><div class="lbl">Pre&#231;o m&#237;nimo</div><div class="val" id="r-preco-min">-</div></div>
+      <div class="metric"><div class="lbl">Pre&#231;o sugerido</div><div class="val g" id="r-preco-sug">-</div></div>
+      <div class="metric"><div class="lbl">Desconto m&#225;ximo</div><div class="val r" id="r-desc-max">-</div></div>
+    </div>
+    <div id="r-detalhe"></div>
+    <div id="r-difal-info"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Distribui&#231;&#227;o do lucro</div>
+    <div class="g2" style="margin-bottom:10px">
+      <div class="field"><label>Valor de venda (R$)</label><input type="number" id="venda" min="0" step="0.01" oninput="calcDist()" placeholder="Autom&#225;tico"></div>
+      <div class="field"><label>Custo total (R$)</label><input type="number" id="custo-venda" min="0" step="0.01" oninput="calcDist()" placeholder="Autom&#225;tico"></div>
+    </div>
+    <div id="dist-warn"></div>
+    <div class="dist-bar">
+      <div class="dist-seg" id="db1" style="background:#60a5fa;width:20%"></div>
+      <div class="dist-seg" id="db2" style="background:#4ade80;width:20%"></div>
+      <div class="dist-seg" id="db3" style="background:#a78bfa;width:10%"></div>
+      <div class="dist-seg" id="db4" style="background:#fbbf24;width:50%"></div>
+    </div>
+    <div class="dist-row"><div class="dist-name"><div class="dot" style="background:#60a5fa"></div>Caixa empresa (20%)</div><div class="dist-val" id="dd1">-</div></div>
+    <div class="dist-row"><div class="dist-name"><div class="dot" style="background:#4ade80"></div>Henrique (25%)</div><div class="dist-val" id="dd2">-</div></div>
+    <div class="dist-row"><div class="dist-name"><div class="dot" style="background:#a78bfa"></div>Matheus (25%)</div><div class="dist-val" id="dd3">-</div></div>
+    <div class="dist-row"><div class="dist-name"><div class="dot" style="background:#fbbf24"></div>Nuflow (50%)</div><div class="dist-val" id="dd4">-</div></div>
+    <div class="sep"></div>
+    <div class="dist-row"><div class="dist-name" style="font-weight:500;color:var(--text)">Lucro total</div><div class="dist-val" style="color:var(--green)" id="dd0">-</div></div>
+    <div style="margin-top:12px;display:flex;justify-content:flex-end">
+      <button class="btn btn-primary btn-sm" onclick="registrarVenda()">Registrar venda</button>
+    </div>
+  </div>
+</div>
+
+<div id="pane-nf" class="pane">
+  <div class="card">
+    <div class="card-title">Importar XML da NF-e</div>
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('xml-file').click()">
+      <div class="drop-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M4 6l4 4 4-4M2 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <p><strong>Clique para selecionar</strong> ou arraste o XML aqui</p>
+      <input type="file" id="xml-file" accept=".xml" style="display:none" onchange="handleFile(this)">
+    </div>
+    <div class="or-row"><div class="or-line"></div><div class="or-lbl">ou cole o XML</div><div class="or-line"></div></div>
+    <textarea id="xml-text" placeholder="Cole aqui o XML da NF-e..."></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-primary" onclick="parseXML()">Ler NF-e</button>
+      <button class="btn" onclick="clearNF()">Limpar</button>
+    </div>
+  </div>
+  <div id="nf-result" style="display:none">
+    <div class="card" id="nf-header-card"></div>
+    <div class="card">
+      <div class="card-title">Produtos da nota</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:32%">Produto</th><th style="width:7%">Qtd</th><th style="width:13%">Vl unit</th>
+            <th style="width:8%">IPI%</th><th style="width:13%">Custo c/ IPI</th><th style="width:8%">Origem</th><th style="width:19%">A&#231;&#227;o</th>
+          </tr></thead>
+          <tbody id="prod-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="pane-fin" class="pane">
+  <div class="card">
+    <div class="card-title">Resumo financeiro</div>
+    <div class="fin-summary">
+      <div class="fin-card"><div class="lbl">Caixa empresa</div><div class="val g" id="fin-caixa">R$ 0,00</div><div class="sub">20% de cada venda</div></div>
+      <div class="fin-card"><div class="lbl">Total vendas</div><div class="val b" id="fin-total-vendas">R$ 0,00</div><div class="sub" id="fin-qtd-vendas">0 vendas</div></div>
+      <div class="fin-card"><div class="lbl">Total lucro</div><div class="val" id="fin-total-lucro">R$ 0,00</div><div class="sub">Soma dos lucros</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Saldo por socio</div>
+    <div class="g3">
+      <div class="socio-card"><div class="socio-name">Henrique</div><div class="socio-saldo" id="saldo-henrique">R$ 0,00</div><div class="socio-pct">25% do lucro</div><div class="retirada-form"><input type="number" id="ret-henrique" placeholder="Valor retirada" min="0" step="0.01"><button class="btn btn-sm btn-blue" onclick="registrarRetirada('henrique')">Retirar</button></div></div>
+      <div class="socio-card"><div class="socio-name">Matheus</div><div class="socio-saldo" id="saldo-matheus">R$ 0,00</div><div class="socio-pct">25% do lucro</div><div class="retirada-form"><input type="number" id="ret-matheus" placeholder="Valor retirada" min="0" step="0.01"><button class="btn btn-sm btn-blue" onclick="registrarRetirada('matheus')">Retirar</button></div></div>
+      <div class="socio-card"><div class="socio-name">Nuflow</div><div class="socio-saldo" id="saldo-nuflow">R$ 0,00</div><div class="socio-pct">50% do lucro</div><div class="retirada-form"><input type="number" id="ret-nuflow" placeholder="Valor retirada" min="0" step="0.01"><button class="btn btn-sm btn-blue" onclick="registrarRetirada('nuflow')">Retirar</button></div></div>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Historico de vendas</div><div id="historico-vendas"><div class="empty-state">Nenhuma venda registrada.</div></div></div>
+  <div class="card"><div class="card-title">Historico de retiradas</div><div id="historico-retiradas"><div class="empty-state">Nenhuma retirada registrada.</div></div></div>
+</div>
+
+<div id="pane-bling" class="pane">
+  <div class="card">
+    <div class="card-title">Conectar ao Bling</div>
+    <div id="bling-status-area"></div>
+  </div>
+  <div class="card" id="bling-vendas-card" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <div class="card-title" style="margin-bottom:0">Vendas do Bling</div>
+      <button class="btn btn-sm btn-blue" id="btn-sync" onclick="sincronizarVendas()">Sincronizar</button>
+    </div>
+    <div id="bling-vendas-lista"><div class="empty-state">Clique em sincronizar.</div></div>
+  </div>
+  <div class="card" id="bling-resumo-card" style="display:none">
+    <div class="card-title">Resumo</div>
+    <div class="g3">
+      <div class="metric"><div class="lbl">Total vendas</div><div class="val b" id="bling-total-valor">R$ 0,00</div></div>
+      <div class="metric"><div class="lbl">Quantidade</div><div class="val" id="bling-total-qtd">0</div></div>
+      <div class="metric"><div class="lbl">Ultima sync</div><div class="val" id="bling-ultima-sync" style="font-size:13px">-</div></div>
+    </div>
+  </div>
+</div>
+
+</main>
+<script>
+var SIMPLES=0.04,DIFAL={SP:0.06,SC:0.06,ES:0.06};
+var SB_URL="https://aqnuesljghouxjztxyoy.supabase.co";
+var SB_KEY="sb_publishable_XdfMvdPp2YKLRdvEedEOvA_Nce082qP";
+var BLING_CID="47842f384855dc5bc7aa286dfdb85776d9694b43";
+var origem="MG",autoSug=0,autoCusto=0,xmlProds=[];
+
+function fmt(v){return"R$ "+(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtp(v){return(v||0).toFixed(2).replace(".",",")+"&#37;";}
+function hoje(){return new Date().toLocaleDateString("pt-BR");}
+
+function loadE(){try{return JSON.parse(localStorage.getItem("pf_estado")||"{}");}catch(e){return{};}}
+function saveE(e){localStorage.setItem("pf_estado",JSON.stringify(e));}
+function getE(){var e=loadE();return{caixa:e.caixa||0,saldos:e.saldos||{henrique:0,matheus:0,nuflow:0},vendas:e.vendas||[],retiradas:e.retiradas||[]};}
+
+function showTab(t){
+  ["calc","nf","fin","bling"].forEach(function(id){
+    var tab=document.getElementById("tab-"+id);
+    var pane=document.getElementById("pane-"+id);
+    if(tab)tab.classList.toggle("active",id===t);
+    if(pane)pane.classList.toggle("active",id===t);
+    if(pane)pane.style.display=(id===t?"block":"none");
+  });
+  if(t==="fin")renderFin();
+  if(t==="bling")initBling();
+}
+
+function setOrigem(o){
+  origem=o;
+  ["MG","SP","SC","ES"].forEach(function(e){
+    var b=document.getElementById("btn-"+e);
+    if(b)b.classList.toggle("active",e===o);
+  });
+  calcPreco();
+}
+
+function calcPreco(){
+  var custo=parseFloat(document.getElementById("custo").value)||0;
+  var ipiPct=parseFloat(document.getElementById("ipi").value)||0;
+  var margem=parseFloat(document.getElementById("margem").value)||0;
+  var taxaPct=parseFloat(document.getElementById("pagto").value)||0;
+  var ipiVl=custo*(ipiPct/100);
+  var difalPct=DIFAL[origem]||0;
+  var difalVl=custo*difalPct;
+  var custoReal=custo+ipiVl+difalVl;
+  var taxa=taxaPct/100;
+  var pMin=custoReal/((1-SIMPLES)*(1-taxa));
+  var pSug=custoReal/((1-SIMPLES)*(1-taxa)*(1-margem/100));
+  var dMax=(pSug-pMin)/pSug*100;
+  autoSug=pSug;autoCusto=custoReal;
+  document.getElementById("r-custo-real").textContent=fmt(custoReal);
+  document.getElementById("r-preco-min").textContent=fmt(pMin);
+  document.getElementById("r-preco-sug").textContent=fmt(pSug);
+  document.getElementById("r-desc-max").textContent=dMax.toFixed(1).replace(".",",")+"%";
+  var impVl=pSug*SIMPLES,cartVl=pSug*taxa,lucroVl=pSug-custoReal-impVl-cartVl;
+  var rows=[["Custo de aquisicao",fmt(custo)]];
+  if(ipiVl>0)rows.push(["IPI",fmt(ipiVl)]);
+  if(difalVl>0)rows.push(["DIFAL ("+difalPct*100+"%)",fmt(difalVl)]);
+  rows.push(["Simples Nacional (4%)",fmt(impVl)]);
+  if(taxa>0)rows.push(["Taxa pagamento ("+taxaPct+"%)",fmt(cartVl)]);
+  rows.push(["Lucro estimado",fmt(lucroVl)]);
+  document.getElementById("r-detalhe").innerHTML=rows.map(function(r){
+    return "<div class='drow'><span class='k'>"+r[0]+"</span><span class='v'>"+r[1]+"</span></div>";
+  }).join("");
+  document.getElementById("r-difal-info").innerHTML=difalVl>0
+    ?"<div class='alert alert-warn' style='margin-top:10px'>DIFAL de "+(difalPct*100)+"% aplicado ("+origem+" para MG). Confirme com contador.</div>":"";
+  var ve=document.getElementById("venda"),ce=document.getElementById("custo-venda");
+  if(!ve.dataset.manual)ve.placeholder=fmt(pSug);
+  if(!ce.dataset.manual)ce.placeholder=fmt(custoReal);
+  calcDist();
+}
+
+document.getElementById("venda").addEventListener("input",function(){this.dataset.manual="1";});
+document.getElementById("custo-venda").addEventListener("input",function(){this.dataset.manual="1";});
+
+function calcDist(){
+  var venda=parseFloat(document.getElementById("venda").value)||autoSug;
+  var custoV=parseFloat(document.getElementById("custo-venda").value)||autoCusto;
+  var lucro=venda-custoV;
+  var warn=document.getElementById("dist-warn");
+  if(lucro<=0){
+    warn.innerHTML="<div class='alert alert-warn'>Custo maior que valor de venda.</div>";
+    ["dd0","dd1","dd2","dd3","dd4"].forEach(function(id){document.getElementById(id).textContent="-";});
+    return;
+  }
+  warn.innerHTML="";
+  var caixa=lucro*0.2,resto=lucro-caixa,s1=resto*0.25,s2=resto*0.25,s3=resto*0.5;
+  document.getElementById("dd0").textContent=fmt(lucro);
+  document.getElementById("dd1").textContent=fmt(caixa);
+  document.getElementById("dd2").textContent=fmt(s1);
+  document.getElementById("dd3").textContent=fmt(s2);
+  document.getElementById("dd4").textContent=fmt(s3);
+  document.getElementById("db1").style.width=(caixa/lucro*100).toFixed(1)+"%";
+  document.getElementById("db2").style.width=(s1/lucro*100).toFixed(1)+"%";
+  document.getElementById("db3").style.width=(s2/lucro*100).toFixed(1)+"%";
+  document.getElementById("db4").style.width=(s3/lucro*100).toFixed(1)+"%";
+}
+
+function registrarVenda(){
+  var venda=parseFloat(document.getElementById("venda").value)||autoSug;
+  var custoV=parseFloat(document.getElementById("custo-venda").value)||autoCusto;
+  var lucro=venda-custoV;
+  if(lucro<=0){alert("Sem lucro para registrar.");return;}
+  var caixa=lucro*0.2,resto=lucro-caixa,s1=resto*0.25,s2=resto*0.25,s3=resto*0.5;
+  var e=getE();
+  e.caixa+=caixa;e.saldos.henrique+=s1;e.saldos.matheus+=s2;e.saldos.nuflow+=s3;
+  e.vendas.unshift({data:hoje(),venda:venda,custo:custoV,lucro:lucro,caixa:caixa,s1:s1,s2:s2,s3:s3});
+  saveE(e);alert("Venda registrada!");
+}
+
+function registrarRetirada(socio){
+  var val=parseFloat(document.getElementById("ret-"+socio).value)||0;
+  if(val<=0){alert("Informe um valor valido.");return;}
+  var e=getE();
+  if(val>e.saldos[socio]){alert("Saldo insuficiente.");return;}
+  e.saldos[socio]-=val;
+  e.retiradas.unshift({data:hoje(),socio:socio,valor:val});
+  saveE(e);document.getElementById("ret-"+socio).value="";renderFin();alert("Retirada registrada!");
+}
+
+function renderFin(){
+  var e=getE();
+  var tv=e.vendas.reduce(function(a,v){return a+v.venda;},0);
+  var tl=e.vendas.reduce(function(a,v){return a+v.lucro;},0);
+  document.getElementById("fin-caixa").textContent=fmt(e.caixa);
+  document.getElementById("fin-total-vendas").textContent=fmt(tv);
+  document.getElementById("fin-qtd-vendas").textContent=e.vendas.length+" venda(s)";
+  document.getElementById("fin-total-lucro").textContent=fmt(tl);
+  document.getElementById("saldo-henrique").textContent=fmt(e.saldos.henrique);
+  document.getElementById("saldo-matheus").textContent=fmt(e.saldos.matheus);
+  document.getElementById("saldo-nuflow").textContent=fmt(e.saldos.nuflow);
+  var hv=document.getElementById("historico-vendas");
+  hv.innerHTML=e.vendas.length===0?"<div class='empty-state'>Nenhuma venda.</div>":e.vendas.slice(0,20).map(function(v){
+    return "<div class='venda-row'><div><div style='font-size:13px;font-weight:500'>"+fmt(v.venda)+"</div><div class='venda-data'>"+v.data+" - Lucro: "+fmt(v.lucro)+"</div></div><div style='font-size:12px;color:var(--text2);text-align:right'>Caixa: "+fmt(v.caixa)+"<br>H: "+fmt(v.s1)+" M: "+fmt(v.s2)+" N: "+fmt(v.s3)+"</div></div>";
+  }).join("");
+  var hr=document.getElementById("historico-retiradas");
+  var nomes={henrique:"Henrique",matheus:"Matheus",nuflow:"Nuflow"};
+  hr.innerHTML=e.retiradas.length===0?"<div class='empty-state'>Nenhuma retirada.</div>":e.retiradas.slice(0,20).map(function(r){
+    return "<div class='venda-row'><div class='venda-data'>"+r.data+" - "+nomes[r.socio]+"</div><div style='color:var(--red);font-weight:500'>-"+fmt(r.valor)+"</div></div>";
+  }).join("");
+}
+
+async function pesquisarPrecoBusca(){
+  var nome=document.getElementById("busca-produto").value.trim();
+  if(!nome)return;
+  var el=document.getElementById("busca-resultado"),btn=document.getElementById("btn-busca");
+  el.className="price-result searching";
+  el.innerHTML="<span class='spin'></span>Pesquisando...";
+  btn.disabled=true;
+  try{
+    var res=await fetch(SB_URL+"/functions/v1/search-price",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+SB_KEY,"apikey":SB_KEY},body:JSON.stringify({nomeProduto:nome})});
+    var data=await res.json();
+    if(!res.ok)throw new Error(data.error||"Erro");
+    el.className="price-result found";
+    el.innerHTML="Preco medio: <strong>"+fmt(data.preco_medio)+"</strong> - Faixa: "+fmt(data.faixa_min)+" a "+fmt(data.faixa_max)+" - Fonte: "+data.fonte;
+  }catch(e){el.className="price-result err";el.textContent="Nao foi possivel pesquisar.";}
+  btn.disabled=false;
+}
+
+document.getElementById("busca-produto").addEventListener("keydown",function(e){if(e.key==="Enter")pesquisarPrecoBusca();});
+
+async function pesquisarPrecoNF(rowId,nome){
+  var el=document.getElementById("pr-"+rowId);
+  el.className="price-result searching";el.innerHTML="<span class='spin'></span>Pesquisando...";
+  try{
+    var res=await fetch(SB_URL+"/functions/v1/search-price",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+SB_KEY,"apikey":SB_KEY},body:JSON.stringify({nomeProduto:nome})});
+    var data=await res.json();
+    if(!res.ok)throw new Error(data.error||"Erro");
+    el.className="price-result found";
+    el.innerHTML="Medio: <strong>"+fmt(data.preco_medio)+"</strong> - "+fmt(data.faixa_min)+" a "+fmt(data.faixa_max);
+  }catch(e){el.className="price-result err";el.textContent="Erro ao pesquisar.";}
+}
+
+function handleFile(input){
+  var file=input.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){document.getElementById("xml-text").value=e.target.result;parseXML();};
+  reader.readAsText(file,"UTF-8");
+}
+
+var dz=document.getElementById("drop-zone");
+dz.addEventListener("dragover",function(e){e.preventDefault();});
+dz.addEventListener("drop",function(e){
+  e.preventDefault();
+  var file=e.dataTransfer.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(ev){document.getElementById("xml-text").value=ev.target.result;parseXML();};
+  reader.readAsText(file,"UTF-8");
+});
+
+function gt(el,tag){var f=el.querySelector(tag);return f?f.textContent.trim():"";}
+
+function parseXML(){
+  var raw=document.getElementById("xml-text").value.trim();
+  if(!raw){alert("Cole ou selecione um XML primeiro.");return;}
+  var doc;
+  try{doc=new DOMParser().parseFromString(raw,"application/xml");if(doc.querySelector("parsererror"))throw new Error();}
+  catch(e){alert("XML invalido.");return;}
+  var infNFe=doc.querySelector("infNFe");
+  if(!infNFe){alert("Nao e uma NF-e valida.");return;}
+  var emit=infNFe.querySelector("emit"),ide=infNFe.querySelector("ide"),total=infNFe.querySelector("ICMSTot");
+  var emitNome=emit?gt(emit,"xNome"):"",emitUF=emit?gt(emit,"UF"):"";
+  var nNF=ide?gt(ide,"nNF"):"",dhEmi=ide?(gt(ide,"dhEmi")||gt(ide,"dEmi")):"";
+  var vlTotal=total?parseFloat(gt(total,"vNF"))||0:0;
+  var fora=emitUF&&emitUF!=="MG";
+  document.getElementById("nf-header-card").innerHTML=
+    "<div class='card-title'>Dados da nota</div><div class='g3'>"
+    +"<div><div class='drow'><span class='k'>Emitente</span><span class='v'>"+emitNome+"</span></div>"
+    +"<div class='drow'><span class='k'>UF</span><span class='v'><span class='badge "+(fora?"badge-fora":"badge-mg")+"'>"+emitUF+"</span></span></div></div>"
+    +"<div><div class='drow'><span class='k'>Numero NF</span><span class='v'>"+nNF+"</span></div>"
+    +"<div class='drow'><span class='k'>Emissao</span><span class='v'>"+dhEmi.substring(0,10)+"</span></div></div>"
+    +"<div><div class='drow'><span class='k'>Valor total</span><span class='v' style='color:var(--green)'>"+fmt(vlTotal)+"</span></div>"
+    +(fora?"<div class='alert alert-info' style='margin-top:8px'>DIFAL de 6% pode incidir.</div>":"")
+    +"</div></div>";
+  var dets=infNFe.querySelectorAll("det");
+  var tbody=document.getElementById("prod-tbody");
+  tbody.innerHTML="";xmlProds=[];
+  dets.forEach(function(det){
+    var prod=det.querySelector("prod"),imp=det.querySelector("imposto");
+    if(!prod)return;
+    var xProd=gt(prod,"xProd"),qCom=parseFloat(gt(prod,"qCom"))||1,vUnCom=parseFloat(gt(prod,"vUnCom"))||0,vProd=parseFloat(gt(prod,"vProd"))||0;
+    var ipiPct=0,ipiVl=0,ipiEl=imp?imp.querySelector("IPI"):null;
+    if(ipiEl){var pI=ipiEl.querySelector("pIPI"),vI=ipiEl.querySelector("vIPI");if(pI)ipiPct=parseFloat(pI.textContent)||0;if(vI)ipiVl=parseFloat(vI.textContent)||0;if(!ipiPct&&vI&&vProd>0)ipiPct=ipiVl/vProd*100;}
+    var custo=vUnCom+(ipiVl/qCom),rid="r"+Math.random().toString(36).substr(2,6);
+    xmlProds.push({nome:xProd,custo:custo,uf:emitUF,ipi:ipiPct});
+    var tr=document.createElement("tr");
+    var nomeSafe=xProd.replace(/"/g,"").substring(0,60);
+    tr.innerHTML="<td title='"+xProd+"'>"+xProd+"<div class='price-result' id='pr-"+rid+"'></div></td>"
+      +"<td>"+qCom+"</td><td>"+fmt(vUnCom)+"</td>"
+      +"<td>"+(ipiPct>0?ipiPct.toFixed(1)+"%":"-")+"</td>"
+      +"<td style='font-weight:500'>"+fmt(custo)+"</td>"
+      +"<td><span class='badge "+(fora?"badge-fora":"badge-mg")+"'>"+emitUF+"</span></td>"
+      +"<td style='display:flex;gap:4px'>"
+      +"<button class='btn btn-sm btn-purple' onclick=\"pesquisarPrecoNF('"+rid+"','"+nomeSafe+"')\">Pesquisar</button>"
+      +"<button class='btn btn-sm btn-blue' onclick=\"usarProd("+custo+",'"+emitUF+"',"+ipiPct+")\">Usar</button>"
+      +"</td>";
+    tbody.appendChild(tr);
+  });
+  document.getElementById("nf-result").style.display="block";
+  renderXMLProds();
+}
+
+function renderXMLProds(){
+  if(xmlProds.length===0)return;
+  document.getElementById("xml-produtos-grid").innerHTML=xmlProds.map(function(p,i){
+    return "<div class='xml-prod-card' onclick='selProd("+i+")' id='xp-"+i+"'>"
+      +"<div class='xml-prod-name'>"+p.nome+"</div>"
+      +"<div class='xml-prod-info'>"+fmt(p.custo)+" - "+p.uf+(p.ipi>0?" - IPI "+p.ipi.toFixed(1)+"%":"")+"</div></div>";
+  }).join("");
+  document.getElementById("xml-produtos-section").style.display="block";
+}
+
+function selProd(i){
+  var p=xmlProds[i];
+  document.querySelectorAll(".xml-prod-card").forEach(function(el){el.classList.remove("selected");});
+  var card=document.getElementById("xp-"+i);if(card)card.classList.add("selected");
+  document.getElementById("custo").value=p.custo.toFixed(2);
+  document.getElementById("ipi").value=0;
+  setOrigem(["MG","SP","SC","ES"].indexOf(p.uf)>=0?p.uf:"SP");
+  calcPreco();
+}
+
+function usarProd(custo,uf,ipi){
+  document.getElementById("custo").value=custo.toFixed(2);
+  document.getElementById("ipi").value=0;
+  setOrigem(["MG","SP","SC","ES"].indexOf(uf)>=0?uf:"SP");
+  showTab("calc");calcPreco();
+}
+
+function clearNF(){
+  document.getElementById("xml-text").value="";
+  document.getElementById("xml-file").value="";
+  document.getElementById("nf-result").style.display="none";
+}
+
+function initBling(){
+  var sa=document.getElementById("bling-status-area");if(!sa)return;
+  var conn=localStorage.getItem("bl_conn");
+  if(conn){
+    sa.innerHTML="<div class='alert alert-ok' style='margin-bottom:12px'>Bling conectado.</div><button class='btn btn-sm' onclick='desconBling()'>Desconectar</button>";
+    document.getElementById("bling-vendas-card").style.display="block";
+    document.getElementById("bling-resumo-card").style.display="block";
+  }else{
+    sa.innerHTML="<div class='alert alert-info' style='margin-bottom:12px'>Conecte sua conta Bling para importar vendas.</div><button class='btn btn-primary' onclick='conectarBling()'>Conectar Bling</button>";
+    document.getElementById("bling-vendas-card").style.display="none";
+    document.getElementById("bling-resumo-card").style.display="none";
+  }
+}
+
+function desconBling(){localStorage.removeItem("bl_conn");initBling();}
+
+function conectarBling(){
+  var url="https://www.bling.com.br/Api/v3/oauth/authorize?response_type=code&client_id="+BLING_CID;
+  window.open(url,"_blank","width=600,height=700");
+  setTimeout(function(){
+    var code=prompt("Apos autorizar no Bling, cole o codigo da URL (valor apos ?code=):");
+    if(code&&code.trim())trocarCodigo(code.trim());
+  },1500);
+}
+
+async function trocarCodigo(code){
+  var sa=document.getElementById("bling-status-area");
+  sa.innerHTML="<div class='alert alert-info'>Conectando...</div>";
+  try{
+    var res=await fetch(SB_URL+"/functions/v1/bling-callback",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+SB_KEY,"apikey":SB_KEY},body:JSON.stringify({code:code})});
+    var data=await res.json();
+    if(!res.ok)throw new Error(data.error||"Erro");
+    localStorage.setItem("bl_conn","1");
+    initBling();sincronizarVendas();
+  }catch(e){
+    sa.innerHTML="<div class='alert alert-warn'>Erro: "+e.message+"</div><button class='btn btn-primary' onclick='conectarBling()' style='margin-top:8px'>Tentar novamente</button>";
+  }
+}
+
+async function sincronizarVendas(){
+  var btn=document.getElementById("btn-sync");
+  if(btn){btn.disabled=true;btn.textContent="Sincronizando...";}
+  try{
+    var res=await fetch(SB_URL+"/functions/v1/bling-vendas",{method:"GET",headers:{"Authorization":"Bearer "+SB_KEY,"apikey":SB_KEY}});
+    var data=await res.json();
+    if(!res.ok)throw new Error(data.error||"Erro");
+    renderBlingVendas(data.vendas||[]);
+    var el=document.getElementById("bling-ultima-sync");
+    if(el)el.textContent=new Date().toLocaleTimeString("pt-BR");
+  }catch(e){
+    var lista=document.getElementById("bling-vendas-lista");
+    if(lista)lista.innerHTML="<div class='alert alert-warn'>Erro: "+e.message+"</div>";
+  }
+  if(btn){btn.disabled=false;btn.textContent="Sincronizar";}
+}
+
+function renderBlingVendas(vendas){
+  var tv=vendas.reduce(function(a,v){return a+(v.valor||0);},0);
+  var elV=document.getElementById("bling-total-valor"),elQ=document.getElementById("bling-total-qtd");
+  if(elV)elV.textContent=fmt(tv);if(elQ)elQ.textContent=vendas.length;
+  var lista=document.getElementById("bling-vendas-lista");if(!lista)return;
+  if(vendas.length===0){lista.innerHTML="<div class='empty-state'>Nenhuma venda.</div>";return;}
+  var html="<table style='width:100%;border-collapse:collapse;font-size:13px'><thead><tr>"
+    +"<th style='text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3)'>Nr</th>"
+    +"<th style='text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3)'>Data</th>"
+    +"<th style='text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3)'>Cliente</th>"
+    +"<th style='text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3)'>Situacao</th>"
+    +"<th style='text-align:right;padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3)'>Valor</th>"
+    +"</tr></thead><tbody>";
+  vendas.forEach(function(v){
+    html+="<tr>"
+      +"<td style='padding:8px 10px;border-bottom:1px solid var(--border)'>#"+v.numero+"</td>"
+      +"<td style='padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2)'>"+v.data+"</td>"
+      +"<td style='padding:8px 10px;border-bottom:1px solid var(--border)'>"+( v.contato||"-")+"</td>"
+      +"<td style='padding:8px 10px;border-bottom:1px solid var(--border)'><span style='font-size:11px;padding:2px 8px;border-radius:5px;background:var(--green-dim);color:var(--green)'>"+v.situacao+"</span></td>"
+      +"<td style='padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:500;color:var(--green)'>"+fmt(v.valor)+"</td>"
+      +"</tr>";
+  });
+  html+="</tbody></table>";
+  lista.innerHTML=html;
+}
+
+calcPreco();
+renderFin();
+showTab("calc");
+</script>
+</body>
+</html>
