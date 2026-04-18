@@ -373,9 +373,7 @@ function calcPreco(){
   document.getElementById("r-detalhe").innerHTML=rows.map(function(r){return "<div class='drow'><span class='k'>"+r[0]+"</span><span class='v'>"+r[1]+"</span></div>";}).join("");
   document.getElementById("r-difal-info").innerHTML=c.difalVl>0?"<div class='alert alert-warn' style='margin-top:10px'>DIFAL de "+(c.difalPct*100)+"% aplicado ("+origem+" para MG).</div>":"";
   var al=document.getElementById("alerta-margem");
-  if(lucroVl<0){al.innerHTML="<div class='alert alert-danger'>PREJUIZO: voce esta perdendo "+fmt(Math.abs(lucroVl))+" nessa venda.</div>";}
-  else if(margemEf<MARGEM_MIN){al.innerHTML="<div class='alert alert-warn'>Margem baixa: "+fmtp(margemEf)+" (minimo recomendado: "+MARGEM_MIN+"%). Revise o preco.</div>";}
-  else{al.innerHTML="";}
+  al.innerHTML="";
   var ve=document.getElementById("venda"),ce=document.getElementById("custo-venda");
   if(!ve.dataset.manual)ve.placeholder=fmt(pMin);
   if(!ce.dataset.manual)ce.placeholder=fmt(c.total);
@@ -652,13 +650,19 @@ async function sincronizarVendas(){
 
 function registrarVendaBling(v){
   var e=getE();
-  var jaExiste=e.vendas.some(function(x){return x.blingId===v.id;});
-  if(jaExiste)return false;
+  var idx=e.vendas.findIndex(function(x){return x.blingId===v.id;});
   var lucro=v.lucroReal||0;
   if(lucro<=0)return false;
   var caixa=lucro*0.2,resto=lucro-caixa,s1=resto*0.25,s2=resto*0.25,s3=resto*0.5;
+  var registro={data:v.data,venda:v.valor,custo:v.custoTotal||0,lucro:lucro,caixa:caixa,s1:s1,s2:s2,s3:s3,origem:"bling",blingId:v.id,numero:v.numero};
+  if(idx>=0){
+    // Reverte os valores antigos antes de atualizar
+    var old=e.vendas[idx];
+    e.caixa-=old.caixa;e.saldos.henrique-=old.s1;e.saldos.matheus-=old.s2;e.saldos.nuflow-=old.s3;
+    e.vendas.splice(idx,1);
+  }
   e.caixa+=caixa;e.saldos.henrique+=s1;e.saldos.matheus+=s2;e.saldos.nuflow+=s3;
-  e.vendas.unshift({data:v.data,venda:v.valor,custo:v.custoTotal||0,lucro:lucro,caixa:caixa,s1:s1,s2:s2,s3:s3,origem:"bling",blingId:v.id,numero:v.numero});
+  e.vendas.unshift(registro);
   saveE(e);return true;
 }
 
