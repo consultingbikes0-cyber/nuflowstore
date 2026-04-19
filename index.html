@@ -126,11 +126,11 @@ tbody tr:last-child td{border-bottom:none}
     <div class="field">
       <label>Digite o produto para pesquisar</label>
       <div class="search-row">
-        <input type="text" id="busca-produto" placeholder="ex: Cubo traseiro Session 28f 12x148">
+        <input type="text" id="busca-produto" placeholder="ex: Aro Session A38 27.5 32 furos">
         <button class="btn btn-purple" id="btn-busca" onclick="pesquisarPrecoBusca()">Pesquisar</button>
       </div>
-      <div id="busca-resultado" class="price-result" style="margin-top:6px"></div>
     </div>
+    <div id="busca-resultado" style="margin-top:10px"></div>
   </div>
 
   <div id="xml-produtos-section" style="display:none" class="card">
@@ -478,15 +478,47 @@ function renderFin(){
 
 async function pesquisarPrecoBusca(){
   var nome=document.getElementById("busca-produto").value.trim();if(!nome)return;
+  var custo=parseFloat(document.getElementById("custo").value)||0;
   var el=document.getElementById("busca-resultado"),btn=document.getElementById("btn-busca");
-  el.className="price-result searching";el.innerHTML="<span class='spin'></span>Pesquisando...";btn.disabled=true;
+  el.innerHTML="<div style='padding:12px;background:var(--surface2);border-radius:8px;font-size:13px;color:var(--amber)'><span class='spin'></span> Buscando precos no Mercado Livre...</div>";
+  btn.disabled=true;
   try{
-    var res=await fetch(SB_URL+"/functions/v1/search-price",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+SB_KEY,"apikey":SB_KEY},body:JSON.stringify({nomeProduto:nome})});
+    var body={nomeProduto:nome};
+    if(custo>0)body.custoProduto=custo;
+    var res=await fetch(SB_URL+"/functions/v1/search-price",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+SB_KEY,"apikey":SB_KEY},body:JSON.stringify(body)});
     var data=await res.json();if(!res.ok)throw new Error(data.error||"Erro");
-    el.className="price-result found";
-    el.innerHTML="Preco medio: <strong>"+fmt(data.preco_medio)+"</strong> - Faixa: "+fmt(data.faixa_min)+" a "+fmt(data.faixa_max)+" - Fonte: "+data.fonte;
-  }catch(e){el.className="price-result err";el.textContent="Nao foi possivel pesquisar.";}
+    var html="<div style='background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px'>";
+    html+="<div style='font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px'>Mercado Livre - "+nome+"</div>";
+    html+="<div class='g3' style='margin-bottom:12px'>";
+    html+="<div class='metric'><div class='lbl'>Minimo</div><div class='val r'>"+fmt(data.preco_min)+"</div></div>";
+    html+="<div class='metric'><div class='lbl'>Medio</div><div class='val b'>"+fmt(data.preco_medio)+"</div></div>";
+    html+="<div class='metric'><div class='lbl'>Maximo</div><div class='val g'>"+fmt(data.preco_max)+"</div></div>";
+    html+="</div>";
+    if(data.sugestao_preco){
+      html+="<div style='background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:8px;padding:10px;margin-bottom:10px'>";
+      html+="<div style='font-size:11px;color:var(--text3);margin-bottom:3px'>SUGESTAO DE PRECO IDEAL</div>";
+      html+="<div style='font-size:20px;font-weight:700;font-family:Syne,sans-serif;color:var(--green)'>"+fmt(data.sugestao_preco)+"</div>";
+      html+="<div style='font-size:11px;color:var(--text2);margin-top:2px'>Competitivo com o mercado e com margem minima de 15%</div>";
+      html+="<button class='btn btn-primary btn-sm' style='margin-top:8px' onclick='usarPrecoSugerido("+data.sugestao_preco+")'>Usar este preco no simulador</button>";
+      html+="</div>";
+    }
+    if(data.links&&data.links.length>0){
+      html+="<div style='font-size:11px;color:var(--text3);margin-bottom:5px'>Ver no Mercado Livre:</div>";
+      data.links.slice(0,2).forEach(function(l){
+        html+="<a href='"+l+"' target='_blank' style='font-size:12px;color:var(--blue);display:block;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"+l+"</a>";
+      });
+    }
+    html+="</div>";
+    el.innerHTML=html;
+  }catch(e){
+    el.innerHTML="<div style='padding:10px;background:var(--red-dim);border-radius:8px;font-size:13px;color:var(--red)'>Nao foi possivel pesquisar: "+e.message+"</div>";
+  }
   btn.disabled=false;
+}
+
+function usarPrecoSugerido(preco){
+  var el=document.getElementById("vp-preco");
+  if(el){el.value=preco.toFixed(2);calcVenderPor();}
 }
 document.getElementById("busca-produto").addEventListener("keydown",function(e){if(e.key==="Enter")pesquisarPrecoBusca();});
 
