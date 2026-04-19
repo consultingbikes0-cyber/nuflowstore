@@ -300,11 +300,16 @@ tbody tr:last-child td{border-bottom:none}
   </div>
   <div class="card" id="bling-resumo-card" style="display:none">
     <div class="card-title">Resumo</div>
-    <div class="g4">
+    <div class="g4" style="margin-bottom:10px">
       <div class="metric"><div class="lbl">Total vendas NF</div><div class="val b" id="bling-total-valor">R$ 0,00</div></div>
       <div class="metric"><div class="lbl">Quantidade</div><div class="val" id="bling-total-qtd">0</div></div>
       <div class="metric"><div class="lbl">Lucro total</div><div class="val g" id="bling-lucro-total">R$ 0,00</div></div>
       <div class="metric"><div class="lbl">Ultima sync</div><div class="val" id="bling-ultima-sync" style="font-size:13px">-</div></div>
+    </div>
+    <div class="g3">
+      <div class="metric"><div class="lbl">Total Simples (4%)</div><div class="val a" id="bling-total-simples">R$ 0,00</div></div>
+      <div class="metric"><div class="lbl">Total DIFAL</div><div class="val a" id="bling-total-difal">R$ 0,00</div></div>
+      <div class="metric"><div class="lbl">Total impostos</div><div class="val r" id="bling-total-impostos">R$ 0,00</div></div>
     </div>
   </div>
 </div>
@@ -701,31 +706,40 @@ function registrarVendaBling(v){
 function renderBlingVendas(vendas){
   var tv=vendas.reduce(function(a,v){return a+(v.valor||0);},0);
   var tl=vendas.reduce(function(a,v){return a+(v.lucroReal||0);},0);
+  var ts=vendas.reduce(function(a,v){return a+(v.simples||0);},0);
+  var td=vendas.reduce(function(a,v){return a+(v.difal||0);},0);
   var elV=document.getElementById("bling-total-valor"),elQ=document.getElementById("bling-total-qtd"),elL=document.getElementById("bling-lucro-total");
+  var elS=document.getElementById("bling-total-simples"),elD=document.getElementById("bling-total-difal"),elI=document.getElementById("bling-total-impostos");
   if(elV)elV.textContent=fmt(tv);if(elQ)elQ.textContent=vendas.length;if(elL)elL.textContent=fmt(tl);
+  if(elS)elS.textContent=fmt(ts);if(elD)elD.textContent=fmt(td);if(elI)elI.textContent=fmt(ts+td);
   var novas=0;
   vendas.forEach(function(v){if(registrarVendaBling(v))novas++;});
   if(novas>0)renderFin();
   var lista=document.getElementById("bling-vendas-lista");if(!lista)return;
   if(vendas.length===0){lista.innerHTML="<div class='empty-state'>Nenhuma venda com NF emitida.</div>";return;}
-  var html="<table style='width:100%;border-collapse:collapse;font-size:13px'><thead><tr>"
-    +"<th style='text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3)'>Nr</th>"
-    +"<th style='text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3)'>Data</th>"
-    +"<th style='text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3)'>Cliente</th>"
-    +"<th style='text-align:right;padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3)'>Venda</th>"
-    +"<th style='text-align:right;padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3)'>Custo</th>"
-    +"<th style='text-align:right;padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3)'>Lucro</th>"
+  var html="<table style='width:100%;border-collapse:collapse;font-size:12px'><thead><tr>"
+    +"<th style='text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Nr</th>"
+    +"<th style='text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Data</th>"
+    +"<th style='text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Cliente/UF</th>"
+    +"<th style='text-align:right;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Venda</th>"
+    +"<th style='text-align:right;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Custo</th>"
+    +"<th style='text-align:right;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Simples</th>"
+    +"<th style='text-align:right;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>DIFAL</th>"
+    +"<th style='text-align:right;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Lucro</th>"
     +"</tr></thead><tbody>";
   vendas.forEach(function(v){
     var lucro=v.lucroReal||0;
     var corL=lucro<0?"var(--red)":lucro===0?"var(--text2)":"var(--green)";
+    var ufTag=v.ufCliente&&v.ufCliente!=="MG"?"<span style='font-size:10px;padding:1px 5px;border-radius:3px;background:var(--blue-dim);color:var(--blue);margin-left:4px'>"+v.ufCliente+"</span>":"";
     html+="<tr>"
-      +"<td style='padding:8px 10px;border-bottom:1px solid var(--border)'>#"+v.numero+"</td>"
-      +"<td style='padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2)'>"+v.data+"</td>"
-      +"<td style='padding:8px 10px;border-bottom:1px solid var(--border)'>"+( v.contato||"-")+"</td>"
-      +"<td style='padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:500'>"+fmt(v.valor)+"</td>"
-      +"<td style='padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;color:var(--text2)'>"+fmt(v.custoTotal||0)+"</td>"
-      +"<td style='padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:500;color:"+corL+"'>"+fmt(lucro)+"</td>"
+      +"<td style='padding:7px 8px;border-bottom:1px solid var(--border)'>#"+v.numero+"</td>"
+      +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);color:var(--text2)'>"+v.data+"</td>"
+      +"<td style='padding:7px 8px;border-bottom:1px solid var(--border)'>"+(v.contato||"-")+ufTag+"</td>"
+      +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;font-weight:500'>"+fmt(v.valor)+"</td>"
+      +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--text2)'>"+fmt(v.custoTotal||0)+"</td>"
+      +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--amber)'>"+fmt(v.simples||0)+"</td>"
+      +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--amber)'>"+(v.difal>0?fmt(v.difal):"-")+"</td>"
+      +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;font-weight:500;color:"+corL+"'>"+fmt(lucro)+"</td>"
       +"</tr>";
   });
   html+="</tbody></table>";
