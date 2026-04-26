@@ -281,6 +281,14 @@ tbody tr:last-child td{border-bottom:none}
       <div class="socio-card"><div class="socio-name">Nuflow</div><div class="socio-saldo" id="saldo-nuflow">R$ 0,00</div><div class="socio-pct">50% do lucro</div><div class="retirada-form"><input type="number" id="ret-nuflow" placeholder="Valor retirada" min="0" step="0.01"><button class="btn btn-sm btn-blue" onclick="registrarRetirada('nuflow')">Retirar</button></div></div>
     </div>
   </div>
+  <div class="card">
+    <div class="card-title">Impostos do periodo</div>
+    <div class="g3" style="margin-bottom:10px">
+      <div class="fin-card"><div class="lbl">Simples Nacional (4%)</div><div class="val a" id="fin-total-simples">R$ 0,00</div><div class="sub">Total a recolher</div></div>
+      <div class="fin-card"><div class="lbl">DIFAL</div><div class="val a" id="fin-total-difal">R$ 0,00</div><div class="sub">Vendas fora de MG</div></div>
+      <div class="fin-card"><div class="lbl">Total impostos</div><div class="val r" id="fin-total-impostos">R$ 0,00</div><div class="sub">Simples + DIFAL</div></div>
+    </div>
+  </div>
   <div class="card"><div class="card-title">Historico de vendas</div><div id="historico-vendas"><div class="empty-state">Nenhuma venda registrada.</div></div></div>
   <div class="card"><div class="card-title">Historico de retiradas</div><div id="historico-retiradas"><div class="empty-state">Nenhuma retirada registrada.</div></div></div>
 </div>
@@ -462,10 +470,18 @@ function renderFin(){
   var e=getE();
   var tv=e.vendas.reduce(function(a,v){return a+v.venda;},0);
   var tl=e.vendas.reduce(function(a,v){return a+v.lucro;},0);
+  var ts=e.vendas.reduce(function(a,v){return a+(v.simples||v.venda*0.04||0);},0);
+  var td=e.vendas.reduce(function(a,v){return a+(v.difal||0);},0);
   document.getElementById("fin-caixa").textContent=fmt(e.caixa);
   document.getElementById("fin-total-vendas").textContent=fmt(tv);
   document.getElementById("fin-qtd-vendas").textContent=e.vendas.length+" venda(s)";
   document.getElementById("fin-total-lucro").textContent=fmt(tl);
+  var elS=document.getElementById("fin-total-simples");
+  var elD=document.getElementById("fin-total-difal");
+  var elI=document.getElementById("fin-total-impostos");
+  if(elS)elS.textContent=fmt(ts);
+  if(elD)elD.textContent=fmt(td);
+  if(elI)elI.textContent=fmt(ts+td);
   document.getElementById("saldo-henrique").textContent=fmt(e.saldos.henrique);
   document.getElementById("saldo-matheus").textContent=fmt(e.saldos.matheus);
   document.getElementById("saldo-nuflow").textContent=fmt(e.saldos.nuflow);
@@ -680,7 +696,13 @@ async function sincronizarVendas(){
     if(el)el.textContent=new Date().toLocaleTimeString("pt-BR");
   }catch(e){
     var lista=document.getElementById("bling-vendas-lista");
-    if(lista)lista.innerHTML="<div class='alert alert-warn'>Erro: "+e.message+"</div>";
+    var msg=e.message||"";
+    if(msg.includes("401")||msg.includes("403")||msg.includes("nao conectado")||msg.includes("Bling nao conectado")){
+      if(lista)lista.innerHTML="<div class='alert alert-warn' style='margin-bottom:10px'>Token expirado ou conexao perdida.</div>"
+        +"<button class='btn btn-primary' onclick='desconBling();conectarBling()'>Reconectar Bling</button>";
+    }else{
+      if(lista)lista.innerHTML="<div class='alert alert-warn'>Erro: "+msg+"</div>";
+    }
   }
   if(btn){btn.disabled=false;btn.textContent="Sincronizar";}
 }
@@ -691,7 +713,7 @@ function registrarVendaBling(v){
   var lucro=v.lucroReal||0;
   if(lucro<=0)return false;
   var caixa=lucro*0.2,resto=lucro-caixa,s1=resto*0.25,s2=resto*0.25,s3=resto*0.5;
-  var registro={data:v.data,venda:v.valor,custo:v.custoTotal||0,lucro:lucro,caixa:caixa,s1:s1,s2:s2,s3:s3,origem:"bling",blingId:v.id,numero:v.numero};
+  var registro={data:v.data,venda:v.valor,custo:v.custoTotal||0,lucro:lucro,caixa:caixa,s1:s1,s2:s2,s3:s3,origem:"bling",blingId:v.id,numero:v.numero,simples:v.simples||0,difal:v.difal||0,ufCliente:v.ufCliente||'MG'};
   if(idx>=0){
     // Reverte os valores antigos antes de atualizar
     var old=e.vendas[idx];
