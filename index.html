@@ -712,9 +712,8 @@ function renderBlingVendas(vendas){
   var elS=document.getElementById("bling-total-simples"),elD=document.getElementById("bling-total-difal"),elI=document.getElementById("bling-total-impostos");
   if(elV)elV.textContent=fmt(tv);if(elQ)elQ.textContent=vendas.length;if(elL)elL.textContent=fmt(tl);
   if(elS)elS.textContent=fmt(ts);if(elD)elD.textContent=fmt(td);if(elI)elI.textContent=fmt(ts+td);
-  var novas=0;
-  vendas.forEach(function(v){if(registrarVendaBling(v))novas++;});
-  if(novas>0)renderFin();
+  vendas.forEach(function(v){registrarVendaBling(v);});
+  renderFin();
   var lista=document.getElementById("bling-vendas-lista");if(!lista)return;
   if(vendas.length===0){lista.innerHTML="<div class='empty-state'>Nenhuma venda com NF emitida.</div>";return;}
   var html="<table style='width:100%;border-collapse:collapse;font-size:12px'><thead><tr>"
