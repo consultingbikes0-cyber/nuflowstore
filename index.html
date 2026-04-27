@@ -420,7 +420,7 @@ function saveE(e){localStorage.setItem("pf_estado",JSON.stringify(e));}
 function getE(){var e=loadE();return{caixa:e.caixa||0,saldos:e.saldos||{henrique:0,matheus:0,nuflow:0},vendas:e.vendas||[],retiradas:e.retiradas||[]};}
 
 function showTab(t){
-  ["calc","nf","fin","bling"].forEach(function(id){
+  ["calc","nf","fin","bling","analise"].forEach(function(id){
     var tab=document.getElementById("tab-"+id);
     var pane=document.getElementById("pane-"+id);
     if(tab)tab.classList.toggle("active",id===t);
