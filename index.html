@@ -116,6 +116,7 @@ tbody tr:last-child td{border-bottom:none}
     <button class="nav-tab" id="tab-nf" onclick="showTab('nf')">Importar NF-e</button>
     <button class="nav-tab" id="tab-fin" onclick="showTab('fin')">Financeiro</button>
     <button class="nav-tab" id="tab-bling" onclick="showTab('bling')">Bling</button>
+    <button class="nav-tab" id="tab-analise" onclick="showTab('analise')">Analise</button>
   </div>
 </header>
 <main>
@@ -322,6 +323,86 @@ tbody tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<div id="pane-analise" class="pane">
+
+  <!-- Cards de meta -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <div class="card-title" style="margin-bottom:0">Meta do mes</div>
+      <button class="btn btn-sm btn-blue" onclick="abrirModalMeta()">Editar meta</button>
+    </div>
+    <div class="g2" style="margin-bottom:12px">
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.08em">Vendas</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <div style="font-size:28px;font-weight:700;font-family:Syne,sans-serif" id="an-vendas-atual">0</div>
+          <div style="font-size:15px;color:var(--text2)">/</div>
+          <div style="font-size:20px;font-weight:600;font-family:Syne,sans-serif;color:var(--text2)" id="an-meta-qtd">15</div>
+        </div>
+        <div style="height:8px;background:var(--surface2);border-radius:4px;overflow:hidden">
+          <div id="an-bar-qtd" style="height:100%;border-radius:4px;background:var(--green);transition:width .5s;width:0%"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-top:4px" id="an-pct-qtd">0%</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.08em">Faturamento</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">
+          <div style="font-size:22px;font-weight:700;font-family:Syne,sans-serif;color:var(--blue)" id="an-fat-atual">R$ 0</div>
+        </div>
+        <div style="height:8px;background:var(--surface2);border-radius:4px;overflow:hidden">
+          <div id="an-bar-fat" style="height:100%;border-radius:4px;background:var(--blue);transition:width .5s;width:0%"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-top:4px" id="an-pct-fat">0% de <span id="an-meta-fat-label">R$ 0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs do mes -->
+  <div class="card">
+    <div class="card-title">Indicadores do mes atual</div>
+    <div class="g4">
+      <div class="metric"><div class="lbl">Ticket medio</div><div class="val b" id="an-ticket-medio">-</div></div>
+      <div class="metric"><div class="lbl">Lucro do mes</div><div class="val g" id="an-lucro-mes">-</div></div>
+      <div class="metric"><div class="lbl">Impostos do mes</div><div class="val r" id="an-impostos-mes">-</div></div>
+      <div class="metric"><div class="lbl">Margem media</div><div class="val" id="an-margem-media">-</div></div>
+    </div>
+  </div>
+
+  <!-- Produto mais vendido -->
+  <div class="card">
+    <div class="card-title">Produtos mais vendidos</div>
+    <div id="an-produtos-ranking"><div class="empty-state">Sem dados suficientes.</div></div>
+  </div>
+
+  <!-- Historico mensal -->
+  <div class="card">
+    <div class="card-title">Historico mensal</div>
+    <div id="an-historico-mensal"><div class="empty-state">Sem dados suficientes.</div></div>
+  </div>
+
+</div>
+
+<!-- Modal de meta -->
+<div id="modal-meta" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:2rem;width:100%;max-width:420px;margin:1rem">
+    <div style="font-family:Syne,sans-serif;font-size:18px;font-weight:700;margin-bottom:6px">Meta do mes</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:1.5rem" id="modal-meta-subtitulo">Defina suas metas para este mes.</div>
+    <div id="modal-sugestao" style="display:none;background:var(--blue-dim);border:1px solid rgba(96,165,250,.2);border-radius:8px;padding:12px;margin-bottom:1rem;font-size:12px;color:var(--blue)"></div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Meta de vendas (quantidade)</label>
+      <input type="number" id="input-meta-qtd" value="15" min="1" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:15px;color:var(--text);width:100%">
+    </div>
+    <div class="field" style="margin-bottom:1.5rem">
+      <label>Meta de faturamento (R$)</label>
+      <input type="number" id="input-meta-fat" placeholder="Ex: 30000" min="0" step="100" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:15px;color:var(--text);width:100%">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" style="flex:1" onclick="salvarMeta()">Salvar meta</button>
+      <button class="btn" onclick="fecharModalMeta()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 </main>
 <script>
 var SIMPLES=0.04,DIFAL={SP:0.06,SC:0.06,ES:0.06};
@@ -347,6 +428,7 @@ function showTab(t){
   });
   if(t==="fin")renderFin();
   if(t==="bling")initBling();
+  if(t==="analise")renderAnalise();
 }
 
 
@@ -767,6 +849,189 @@ function renderBlingVendas(vendas){
   lista.innerHTML=html;
 }
 
+
+// ===== ANALISE =====
+function getMesAtual(){var d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1).toString().padStart(2,"0");}
+function getMeta(){
+  var mes=getMesAtual();
+  var todas=JSON.parse(localStorage.getItem("pf_metas")||"{}");
+  return todas[mes]||null;
+}
+function salvarMeta(){
+  var qtd=parseInt(document.getElementById("input-meta-qtd").value)||15;
+  var fat=parseFloat(document.getElementById("input-meta-fat").value)||0;
+  var mes=getMesAtual();
+  var todas=JSON.parse(localStorage.getItem("pf_metas")||"{}");
+  todas[mes]={qtd:qtd,fat:fat,definidaEm:new Date().toISOString()};
+  localStorage.setItem("pf_metas",JSON.stringify(todas));
+  fecharModalMeta();
+  renderAnalise();
+}
+function abrirModalMeta(){
+  var meta=getMeta();
+  var sugestao=calcularSugestaoMeta();
+  var modal=document.getElementById("modal-meta");
+  var sub=document.getElementById("modal-meta-subtitulo");
+  var sug=document.getElementById("modal-sugestao");
+  var mesNome=new Date().toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
+  sub.textContent="Defina suas metas para "+mesNome+".";
+  if(meta){
+    document.getElementById("input-meta-qtd").value=meta.qtd;
+    document.getElementById("input-meta-fat").value=meta.fat;
+  }
+  if(sugestao){
+    sug.style.display="block";
+    sug.innerHTML="Sugestao baseada nos ultimos 3 meses (+10%): <strong>"+sugestao.qtd+" vendas</strong> e <strong>"+fmt(sugestao.fat)+"</strong> de faturamento.";
+    if(!meta){
+      document.getElementById("input-meta-qtd").value=sugestao.qtd;
+      document.getElementById("input-meta-fat").value=sugestao.fat.toFixed(0);
+    }
+  }else{
+    sug.style.display="none";
+  }
+  modal.style.display="flex";
+}
+function fecharModalMeta(){
+  document.getElementById("modal-meta").style.display="none";
+}
+function calcularSugestaoMeta(){
+  var e=getE();
+  if(!e.vendas||e.vendas.length===0)return null;
+  var agora=new Date();
+  var meses={};
+  e.vendas.forEach(function(v){
+    var partes=v.data?v.data.split("/"):[];
+    var chave="";
+    if(partes.length===3)chave=partes[2]+"-"+partes[1].padStart(2,"0");
+    else if(v.data&&v.data.length>=7)chave=v.data.substring(0,7);
+    if(chave&&chave!==getMesAtual()){
+      if(!meses[chave])meses[chave]={qtd:0,fat:0};
+      meses[chave].qtd++;
+      meses[chave].fat+=v.venda||0;
+    }
+  });
+  var chaves=Object.keys(meses).sort().slice(-3);
+  if(chaves.length===0)return null;
+  var mediaQtd=chaves.reduce(function(a,k){return a+meses[k].qtd;},0)/chaves.length;
+  var mediaFat=chaves.reduce(function(a,k){return a+meses[k].fat;},0)/chaves.length;
+  return{qtd:Math.ceil(mediaQtd*1.1),fat:Math.round(mediaFat*1.1)};
+}
+function verificarPopupMeta(){
+  var meta=getMeta();
+  if(meta)return;
+  var hoje=new Date();
+  var diaHoje=hoje.getDate();
+  var ultimoPopup=localStorage.getItem("pf_ultimo_popup_meta");
+  var mesAtual=getMesAtual();
+  if(diaHoje===1||!ultimoPopup||ultimoPopup!==mesAtual){
+    localStorage.setItem("pf_ultimo_popup_meta",mesAtual);
+    setTimeout(function(){abrirModalMeta();},500);
+  }
+}
+function renderAnalise(){
+  var meta=getMeta();
+  if(!meta){
+    verificarPopupMeta();
+    return;
+  }
+  var e=getE();
+  var mesAtual=getMesAtual();
+  var vendasMes=e.vendas.filter(function(v){
+    var chave="";
+    var partes=v.data?v.data.split("/"):[];
+    if(partes.length===3)chave=partes[2]+"-"+partes[1].padStart(2,"0");
+    else if(v.data&&v.data.length>=7)chave=v.data.substring(0,7);
+    return chave===mesAtual;
+  });
+  var qtdMes=vendasMes.length;
+  var fatMes=vendasMes.reduce(function(a,v){return a+v.venda;},0);
+  var lucroMes=vendasMes.reduce(function(a,v){return a+v.lucro;},0);
+  var impostosMes=vendasMes.reduce(function(a,v){return a+(v.simples||0)+(v.difal||0);},0);
+  var ticketMedio=qtdMes>0?fatMes/qtdMes:0;
+  var margemMedia=fatMes>0?lucroMes/fatMes*100:0;
+  // Meta progress
+  var pctQtd=meta.qtd>0?Math.min(100,qtdMes/meta.qtd*100):0;
+  var pctFat=meta.fat>0?Math.min(100,fatMes/meta.fat*100):0;
+  var corQtd=pctQtd>=100?"var(--green)":pctQtd>=60?"var(--amber)":"var(--blue)";
+  var corFat=pctFat>=100?"var(--green)":pctFat>=60?"var(--amber)":"var(--blue)";
+  document.getElementById("an-vendas-atual").textContent=qtdMes;
+  document.getElementById("an-meta-qtd").textContent=meta.qtd;
+  document.getElementById("an-fat-atual").textContent=fmt(fatMes);
+  document.getElementById("an-meta-fat-label").textContent=fmt(meta.fat);
+  document.getElementById("an-bar-qtd").style.width=pctQtd.toFixed(1)+"%";
+  document.getElementById("an-bar-qtd").style.background=corQtd;
+  document.getElementById("an-bar-fat").style.width=pctFat.toFixed(1)+"%";
+  document.getElementById("an-bar-fat").style.background=corFat;
+  document.getElementById("an-pct-qtd").textContent=pctQtd.toFixed(0)+"% da meta";
+  document.getElementById("an-pct-fat").innerHTML=pctFat.toFixed(0)+"% de <span id='an-meta-fat-label'>"+fmt(meta.fat)+"</span>";
+  // KPIs
+  document.getElementById("an-ticket-medio").textContent=ticketMedio>0?fmt(ticketMedio):"-";
+  document.getElementById("an-lucro-mes").textContent=lucroMes>0?fmt(lucroMes):"-";
+  document.getElementById("an-impostos-mes").textContent=impostosMes>0?fmt(impostosMes):"-";
+  var margemEl=document.getElementById("an-margem-media");
+  margemEl.textContent=margemMedia>0?fmtp(margemMedia):"-";
+  margemEl.className="val "+(margemMedia>=15?"g":margemMedia>0?"a":"r");
+  // Ranking de produtos
+  var prods={};
+  e.vendas.forEach(function(v){
+    if(!v.numero)return;
+    var k=v.numero;
+    if(!prods[k])prods[k]={nome:"Pedido #"+k,qtd:0,fat:0};
+    prods[k].qtd++;
+    prods[k].fat+=v.venda||0;
+  });
+  var ranking=Object.values(prods).sort(function(a,b){return b.qtd-a.qtd;}).slice(0,5);
+  var prodEl=document.getElementById("an-produtos-ranking");
+  if(ranking.length===0){prodEl.innerHTML="<div class='empty-state'>Sem dados.</div>";}
+  else{
+    prodEl.innerHTML=ranking.map(function(p,i){
+      return "<div class='drow'><span class='k'>"+(i+1)+". "+p.nome+"</span><span class='v'>"+p.qtd+"x - "+fmt(p.fat)+"</span></div>";
+    }).join("");
+  }
+  // Historico mensal
+  var meses={};
+  e.vendas.forEach(function(v){
+    var chave="";
+    var partes=v.data?v.data.split("/"):[];
+    if(partes.length===3)chave=partes[2]+"-"+partes[1].padStart(2,"0");
+    else if(v.data&&v.data.length>=7)chave=v.data.substring(0,7);
+    if(!chave)return;
+    if(!meses[chave])meses[chave]={qtd:0,fat:0,lucro:0};
+    meses[chave].qtd++;
+    meses[chave].fat+=v.venda||0;
+    meses[chave].lucro+=v.lucro||0;
+  });
+  var histEl=document.getElementById("an-historico-mensal");
+  var chavesHist=Object.keys(meses).sort().reverse().slice(0,6);
+  if(chavesHist.length===0){histEl.innerHTML="<div class='empty-state'>Sem dados.</div>";}
+  else{
+    var html="<table style='width:100%;border-collapse:collapse;font-size:13px'><thead><tr>"
+      +"<th style='text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3)'>Mes</th>"
+      +"<th style='text-align:right;padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3)'>Vendas</th>"
+      +"<th style='text-align:right;padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3)'>Faturamento</th>"
+      +"<th style='text-align:right;padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3)'>Lucro</th>"
+      +"</tr></thead><tbody>";
+    chavesHist.forEach(function(k){
+      var m=meses[k];
+      var partes=k.split("-");
+      var nomeMes=new Date(parseInt(partes[0]),parseInt(partes[1])-1,1).toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
+      var isMesAtual=k===mesAtual;
+      html+="<tr style='"+(isMesAtual?"background:var(--surface2)":"")+"'>"
+        +"<td style='padding:8px 10px;border-bottom:1px solid var(--border);font-weight:"+(isMesAtual?"600":"400")+"'>"+nomeMes+(isMesAtual?" <span style='font-size:10px;color:var(--green)'>atual</span>":"")+"</td>"
+        +"<td style='padding:8px 10px;border-bottom:1px solid var(--border);text-align:right'>"+m.qtd+"</td>"
+        +"<td style='padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;color:var(--blue)'>"+fmt(m.fat)+"</td>"
+        +"<td style='padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;color:var(--green)'>"+fmt(m.lucro)+"</td>"
+        +"</tr>";
+    });
+    html+="</tbody></table>";
+    histEl.innerHTML=html;
+  }
+}
+// Fechar modal clicando fora
+document.getElementById("modal-meta").addEventListener("click",function(e){
+  if(e.target===this)fecharModalMeta();
+});
+
 (function(){
   var params=new URLSearchParams(window.location.search);
   var code=params.get("code");
@@ -775,6 +1040,7 @@ function renderBlingVendas(vendas){
 })();
 calcPreco();
 renderFin();
+verificarPopupMeta();
 </script>
 </body>
 </html>
