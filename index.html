@@ -510,9 +510,12 @@ document.getElementById("custo-venda").addEventListener("input",function(){this.
 function calcDist(){
   var venda=parseFloat(document.getElementById("venda").value)||autoSug;
   var custoV=parseFloat(document.getElementById("custo-venda").value)||autoCusto;
-  var lucro=venda-custoV;
+  var taxaPct=parseFloat(document.getElementById("pagto").value)||0;
+  var simples=venda*SIMPLES;
+  var cartao=venda*(taxaPct/100);
+  var lucro=venda-custoV-simples-cartao;
   var warn=document.getElementById("dist-warn");
-  if(lucro<=0){warn.innerHTML="<div class='alert alert-warn'>Custo maior que valor de venda.</div>";["dd0","dd1","dd2","dd3","dd4"].forEach(function(id){document.getElementById(id).textContent="-";});return;}
+  if(lucro<=0){warn.innerHTML="<div class='alert alert-warn'>Lucro negativo apos impostos e taxas. Revise o preco.</div>";["dd0","dd1","dd2","dd3","dd4"].forEach(function(id){document.getElementById(id).textContent="-";});return;}
   warn.innerHTML="";
   var caixa=lucro*0.2,resto=lucro-caixa,s1=resto*0.25,s2=resto*0.25,s3=resto*0.5;
   document.getElementById("dd0").textContent=fmt(lucro);
@@ -529,12 +532,15 @@ function calcDist(){
 function registrarVenda(){
   var venda=parseFloat(document.getElementById("venda").value)||autoSug;
   var custoV=parseFloat(document.getElementById("custo-venda").value)||autoCusto;
-  var lucro=venda-custoV;
-  if(lucro<=0){alert("Sem lucro para registrar.");return;}
+  var taxaPct=parseFloat(document.getElementById("pagto").value)||0;
+  var simples=venda*SIMPLES;
+  var cartao=venda*(taxaPct/100);
+  var lucro=venda-custoV-simples-cartao;
+  if(lucro<=0){alert("Sem lucro para registrar apos impostos e taxas.");return;}
   var caixa=lucro*0.2,resto=lucro-caixa,s1=resto*0.25,s2=resto*0.25,s3=resto*0.5;
   var e=getE();
   e.caixa+=caixa;e.saldos.henrique+=s1;e.saldos.matheus+=s2;e.saldos.nuflow+=s3;
-  e.vendas.unshift({data:hoje(),venda:venda,custo:custoV,lucro:lucro,caixa:caixa,s1:s1,s2:s2,s3:s3,origem:"manual"});
+  e.vendas.unshift({data:hoje(),venda:venda,custo:custoV,lucro:lucro,caixa:caixa,s1:s1,s2:s2,s3:s3,origem:"manual",simples:simples,difal:0});
   saveE(e);alert("Venda registrada!");
 }
 
@@ -932,7 +938,7 @@ function renderAnalise(){
   var meta=getMeta();
   if(!meta){
     verificarPopupMeta();
-    return;
+    meta={qtd:15,fat:0};
   }
   var e=getE();
   var mesAtual=getMesAtual();
