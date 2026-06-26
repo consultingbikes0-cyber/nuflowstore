@@ -33,7 +33,7 @@ main{max-width:980px;margin:0 auto;padding:1.5rem 2rem}
 .metric{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
 .metric .lbl{font-size:11px;color:var(--text3);margin-bottom:3px;font-weight:500}
 .metric .val{font-size:19px;font-weight:600;font-family:"Syne",sans-serif}
-.metric .val.g{color:var(--green)}.metric .val.r{color:var(--red)}.metric .val.b{color:var(--blue)}
+.metric .val.g{color:var(--green)}.metric .val.r{color:var(--red)}.metric .val.b{color:var(--blue)}.metric .val.a{color:var(--amber)}
 .drow{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
 .drow:last-child{border-bottom:none}
 .drow .k{color:var(--text2)}.drow .v{font-weight:500}
@@ -60,6 +60,7 @@ main{max-width:980px;margin:0 auto;padding:1.5rem 2rem}
 .btn-sm{padding:5px 10px;font-size:12px;border-radius:6px}
 .btn-purple{background:var(--purple-dim);color:var(--purple);border-color:rgba(167,139,250,.3)}
 .btn-blue{background:var(--blue-dim);color:var(--blue);border-color:rgba(96,165,250,.3)}
+.btn-red{background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,.3)}
 .drop-zone{border:1.5px dashed var(--border2);border-radius:10px;padding:2rem 1rem;text-align:center;cursor:pointer;margin-bottom:1rem}
 .drop-zone p{font-size:13px;color:var(--text2);margin-top:5px}
 .drop-zone strong{color:var(--text);font-weight:500}
@@ -84,6 +85,8 @@ tbody tr:last-child td{border-bottom:none}
 .fin-card .lbl{font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;font-weight:600}
 .fin-card .val{font-size:22px;font-weight:700;font-family:"Syne",sans-serif}
 .fin-card .sub{font-size:12px;color:var(--text2);margin-top:2px}
+.fin-card .val.a{color:var(--amber)}
+.fin-card .val.r{color:var(--red)}
 .socio-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px}
 .socio-name{font-size:13px;font-weight:500}
 .socio-saldo{font-size:20px;font-weight:700;font-family:"Syne",sans-serif;color:var(--green)}
@@ -318,14 +321,18 @@ tbody tr:last-child td{border-bottom:none}
     <div class="g3">
       <div class="metric"><div class="lbl">Total Simples (4%)</div><div class="val a" id="bling-total-simples">R$ 0,00</div></div>
       <div class="metric"><div class="lbl">Total DIFAL</div><div class="val a" id="bling-total-difal">R$ 0,00</div></div>
-      <div class="metric"><div class="lbl">Total impostos</div><div class="val r" id="bling-total-impostos">R$ 0,00</div></div>
+      <div class="metric"><div class="lbl">Total taxa cartao</div><div class="val a" id="bling-total-cartao">R$ 0,00</div></div>
     </div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="color:var(--red)">Zona de risco</div>
+    <div class="alert alert-warn" style="margin-bottom:10px">Limpar dados apaga todo o historico de vendas, saldos e retiradas salvos neste navegador. Use somente se o financeiro estiver com valores incorretos e voce for ressincronizar do zero.</div>
+    <button class="btn btn-red btn-sm" onclick="limparDadosCompleto()">Limpar dados do painel</button>
   </div>
 </div>
 
 <div id="pane-analise" class="pane">
 
-  <!-- Cards de meta -->
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
       <div class="card-title" style="margin-bottom:0">Meta do mes</div>
@@ -357,7 +364,6 @@ tbody tr:last-child td{border-bottom:none}
     </div>
   </div>
 
-  <!-- KPIs do mes -->
   <div class="card">
     <div class="card-title">Indicadores do mes atual</div>
     <div class="g4">
@@ -368,13 +374,11 @@ tbody tr:last-child td{border-bottom:none}
     </div>
   </div>
 
-  <!-- Produto mais vendido -->
   <div class="card">
     <div class="card-title">Produtos mais vendidos</div>
     <div id="an-produtos-ranking"><div class="empty-state">Sem dados suficientes.</div></div>
   </div>
 
-  <!-- Historico mensal -->
   <div class="card">
     <div class="card-title">Historico mensal</div>
     <div id="an-historico-mensal"><div class="empty-state">Sem dados suficientes.</div></div>
@@ -382,8 +386,7 @@ tbody tr:last-child td{border-bottom:none}
 
 </div>
 
-<!-- Modal de meta -->
-<div id="modal-meta" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center">
+<div id="modal-meta" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center">
   <div style="background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:2rem;width:100%;max-width:420px;margin:1rem">
     <div style="font-family:Syne,sans-serif;font-size:18px;font-weight:700;margin-bottom:6px">Meta do mes</div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:1.5rem" id="modal-meta-subtitulo">Defina suas metas para este mes.</div>
@@ -419,6 +422,16 @@ function loadE(){try{return JSON.parse(localStorage.getItem("pf_estado")||"{}");
 function saveE(e){localStorage.setItem("pf_estado",JSON.stringify(e));}
 function getE(){var e=loadE();return{caixa:e.caixa||0,saldos:e.saldos||{henrique:0,matheus:0,nuflow:0},vendas:e.vendas||[],retiradas:e.retiradas||[]};}
 
+function limparDadosCompleto(){
+  if(!confirm("Tem certeza? Isso vai apagar TODO o historico de vendas, saldos e retiradas salvos neste navegador. Essa acao nao pode ser desfeita."))return;
+  localStorage.removeItem("pf_estado");
+  localStorage.removeItem("pf_metas");
+  localStorage.removeItem("pf_ultimo_popup_meta");
+  alert("Dados limpos. Vá em Sincronizar para recarregar as vendas do Bling.");
+  renderFin();
+  initBling();
+}
+
 function showTab(t){
   ["calc","nf","fin","bling","analise"].forEach(function(id){
     var tab=document.getElementById("tab-"+id);
@@ -431,14 +444,11 @@ function showTab(t){
   if(t==="analise")renderAnalise();
 }
 
-
-
 function setOrigem(o){
   origem=o;
   ["MG","SP","SC","ES"].forEach(function(e){var b=document.getElementById("btn-"+e);if(b)b.classList.toggle("active",e===o);});
   calcPreco();
 }
-
 
 function custoReal(custo,ipiPct,uf){
   var ipiVl=custo*(ipiPct/100);
@@ -540,7 +550,7 @@ function registrarVenda(){
   var caixa=lucro*0.2,resto=lucro-caixa,s1=resto*0.25,s2=resto*0.25,s3=resto*0.5;
   var e=getE();
   e.caixa+=caixa;e.saldos.henrique+=s1;e.saldos.matheus+=s2;e.saldos.nuflow+=s3;
-  e.vendas.unshift({data:hoje(),venda:venda,custo:custoV,lucro:lucro,caixa:caixa,s1:s1,s2:s2,s3:s3,origem:"manual",simples:simples,difal:0});
+  e.vendas.unshift({data:hoje(),venda:venda,custo:custoV,lucro:lucro,caixa:caixa,s1:s1,s2:s2,s3:s3,origem:"manual",simples:simples,difal:0,taxaCartao:cartao});
   saveE(e);alert("Venda registrada!");
 }
 
@@ -576,7 +586,8 @@ function renderFin(){
   var hv=document.getElementById("historico-vendas");
   hv.innerHTML=e.vendas.length===0?"<div class='empty-state'>Nenhuma venda.</div>":e.vendas.slice(0,30).map(function(v){
     var tag=v.origem==="bling"?"<span style='font-size:10px;padding:1px 6px;border-radius:4px;background:var(--green-dim);color:var(--green);margin-left:6px'>Bling NF</span>":"";
-    return "<div class='venda-row'><div><div style='font-size:13px;font-weight:500'>"+fmt(v.venda)+tag+"</div><div class='venda-data'>"+v.data+(v.numero?" - NF #"+v.numero:"")+" - Lucro: "+fmt(v.lucro)+"</div></div><div style='font-size:12px;color:var(--text2);text-align:right'>Caixa: "+fmt(v.caixa)+"<br>H: "+fmt(v.s1)+" M: "+fmt(v.s2)+" N: "+fmt(v.s3)+"</div></div>";
+    var fp=v.formaPagamento?" - "+v.formaPagamento:"";
+    return "<div class='venda-row'><div><div style='font-size:13px;font-weight:500'>"+fmt(v.venda)+tag+"</div><div class='venda-data'>"+v.data+(v.numero?" - NF #"+v.numero:"")+fp+" - Lucro: "+fmt(v.lucro)+"</div></div><div style='font-size:12px;color:var(--text2);text-align:right'>Caixa: "+fmt(v.caixa)+"<br>H: "+fmt(v.s1)+" M: "+fmt(v.s2)+" N: "+fmt(v.s3)+"</div></div>";
   }).join("");
   var hr=document.getElementById("historico-retiradas");
   var nomes={henrique:"Henrique",matheus:"Matheus",nuflow:"Nuflow"};
@@ -801,9 +812,8 @@ function registrarVendaBling(v){
   var lucro=v.lucroReal||0;
   if(lucro<=0)return false;
   var caixa=lucro*0.2,resto=lucro-caixa,s1=resto*0.25,s2=resto*0.25,s3=resto*0.5;
-  var registro={data:v.data,venda:v.valor,custo:v.custoTotal||0,lucro:lucro,caixa:caixa,s1:s1,s2:s2,s3:s3,origem:"bling",blingId:v.id,numero:v.numero,simples:v.simples||0,difal:v.difal||0,ufCliente:v.ufCliente||'MG'};
+  var registro={data:v.data,venda:v.valor,custo:v.custoTotal||0,lucro:lucro,caixa:caixa,s1:s1,s2:s2,s3:s3,origem:"bling",blingId:v.id,numero:v.numero,simples:v.simples||0,difal:v.difal||0,taxaCartao:v.taxaCartao||0,formaPagamento:v.formaPagamento||'',ufCliente:v.ufCliente||'MG'};
   if(idx>=0){
-    // Reverte os valores antigos antes de atualizar
     var old=e.vendas[idx];
     e.caixa-=old.caixa;e.saldos.henrique-=old.s1;e.saldos.matheus-=old.s2;e.saldos.nuflow-=old.s3;
     e.vendas.splice(idx,1);
@@ -818,10 +828,11 @@ function renderBlingVendas(vendas){
   var tl=vendas.reduce(function(a,v){return a+(v.lucroReal||0);},0);
   var ts=vendas.reduce(function(a,v){return a+(v.simples||0);},0);
   var td=vendas.reduce(function(a,v){return a+(v.difal||0);},0);
+  var tc=vendas.reduce(function(a,v){return a+(v.taxaCartao||0);},0);
   var elV=document.getElementById("bling-total-valor"),elQ=document.getElementById("bling-total-qtd"),elL=document.getElementById("bling-lucro-total");
-  var elS=document.getElementById("bling-total-simples"),elD=document.getElementById("bling-total-difal"),elI=document.getElementById("bling-total-impostos");
+  var elS=document.getElementById("bling-total-simples"),elD=document.getElementById("bling-total-difal"),elC=document.getElementById("bling-total-cartao");
   if(elV)elV.textContent=fmt(tv);if(elQ)elQ.textContent=vendas.length;if(elL)elL.textContent=fmt(tl);
-  if(elS)elS.textContent=fmt(ts);if(elD)elD.textContent=fmt(td);if(elI)elI.textContent=fmt(ts+td);
+  if(elS)elS.textContent=fmt(ts);if(elD)elD.textContent=fmt(td);if(elC)elC.textContent=fmt(tc);
   vendas.forEach(function(v){registrarVendaBling(v);});
   renderFin();
   var lista=document.getElementById("bling-vendas-lista");if(!lista)return;
@@ -830,24 +841,25 @@ function renderBlingVendas(vendas){
     +"<th style='text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Nr</th>"
     +"<th style='text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Data</th>"
     +"<th style='text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Cliente/UF</th>"
+    +"<th style='text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Pagamento</th>"
     +"<th style='text-align:right;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Venda</th>"
     +"<th style='text-align:right;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Custo</th>"
-    +"<th style='text-align:right;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Simples</th>"
-    +"<th style='text-align:right;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>DIFAL</th>"
+    +"<th style='text-align:right;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Impostos+Taxa</th>"
     +"<th style='text-align:right;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Lucro</th>"
     +"</tr></thead><tbody>";
   vendas.forEach(function(v){
     var lucro=v.lucroReal||0;
     var corL=lucro<0?"var(--red)":lucro===0?"var(--text2)":"var(--green)";
     var ufTag=v.ufCliente&&v.ufCliente!=="MG"?"<span style='font-size:10px;padding:1px 5px;border-radius:3px;background:var(--blue-dim);color:var(--blue);margin-left:4px'>"+v.ufCliente+"</span>":"";
+    var totalDescontos=(v.simples||0)+(v.difal||0)+(v.taxaCartao||0);
     html+="<tr>"
       +"<td style='padding:7px 8px;border-bottom:1px solid var(--border)'>#"+v.numero+"</td>"
       +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);color:var(--text2)'>"+v.data+"</td>"
       +"<td style='padding:7px 8px;border-bottom:1px solid var(--border)'>"+(v.contato||"-")+ufTag+"</td>"
+      +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px'>"+(v.formaPagamento||"-")+"</td>"
       +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;font-weight:500'>"+fmt(v.valor)+"</td>"
       +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--text2)'>"+fmt(v.custoTotal||0)+"</td>"
-      +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--amber)'>"+fmt(v.simples||0)+"</td>"
-      +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--amber)'>"+(v.difal>0?fmt(v.difal):"-")+"</td>"
+      +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--amber)'>"+fmt(totalDescontos)+"</td>"
       +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;font-weight:500;color:"+corL+"'>"+fmt(lucro)+"</td>"
       +"</tr>";
   });
@@ -855,8 +867,6 @@ function renderBlingVendas(vendas){
   lista.innerHTML=html;
 }
 
-
-// ===== ANALISE =====
 function getMesAtual(){var d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1).toString().padStart(2,"0");}
 function getMeta(){
   var mes=getMesAtual();
@@ -903,7 +913,6 @@ function fecharModalMeta(){
 function calcularSugestaoMeta(){
   var e=getE();
   if(!e.vendas||e.vendas.length===0)return null;
-  var agora=new Date();
   var meses={};
   e.vendas.forEach(function(v){
     var partes=v.data?v.data.split("/"):[];
@@ -955,7 +964,6 @@ function renderAnalise(){
   var impostosMes=vendasMes.reduce(function(a,v){return a+(v.simples||0)+(v.difal||0);},0);
   var ticketMedio=qtdMes>0?fatMes/qtdMes:0;
   var margemMedia=fatMes>0?lucroMes/fatMes*100:0;
-  // Meta progress
   var pctQtd=meta.qtd>0?Math.min(100,qtdMes/meta.qtd*100):0;
   var pctFat=meta.fat>0?Math.min(100,fatMes/meta.fat*100):0;
   var corQtd=pctQtd>=100?"var(--green)":pctQtd>=60?"var(--amber)":"var(--blue)";
@@ -970,14 +978,12 @@ function renderAnalise(){
   document.getElementById("an-bar-fat").style.background=corFat;
   document.getElementById("an-pct-qtd").textContent=pctQtd.toFixed(0)+"% da meta";
   document.getElementById("an-pct-fat").innerHTML=pctFat.toFixed(0)+"% de <span id='an-meta-fat-label'>"+fmt(meta.fat)+"</span>";
-  // KPIs
   document.getElementById("an-ticket-medio").textContent=ticketMedio>0?fmt(ticketMedio):"-";
   document.getElementById("an-lucro-mes").textContent=lucroMes>0?fmt(lucroMes):"-";
   document.getElementById("an-impostos-mes").textContent=impostosMes>0?fmt(impostosMes):"-";
   var margemEl=document.getElementById("an-margem-media");
   margemEl.textContent=margemMedia>0?fmtp(margemMedia):"-";
   margemEl.className="val "+(margemMedia>=15?"g":margemMedia>0?"a":"r");
-  // Ranking de produtos
   var prods={};
   e.vendas.forEach(function(v){
     if(!v.numero)return;
@@ -994,7 +1000,6 @@ function renderAnalise(){
       return "<div class='drow'><span class='k'>"+(i+1)+". "+p.nome+"</span><span class='v'>"+p.qtd+"x - "+fmt(p.fat)+"</span></div>";
     }).join("");
   }
-  // Historico mensal
   var meses={};
   e.vendas.forEach(function(v){
     var chave="";
@@ -1033,7 +1038,6 @@ function renderAnalise(){
     histEl.innerHTML=html;
   }
 }
-// Fechar modal clicando fora
 document.getElementById("modal-meta").addEventListener("click",function(e){
   if(e.target===this)fecharModalMeta();
 });
