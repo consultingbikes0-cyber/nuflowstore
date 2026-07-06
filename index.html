@@ -324,11 +324,7 @@ tbody tr:last-child td{border-bottom:none}
       <div class="metric"><div class="lbl">Total taxa cartao</div><div class="val a" id="bling-total-cartao">R$ 0,00</div></div>
     </div>
   </div>
-  <div class="card">
-    <div class="card-title" style="color:var(--red)">Zona de risco</div>
-    <div class="alert alert-warn" style="margin-bottom:10px">Limpar dados apaga todo o historico de vendas, saldos e retiradas salvos neste navegador. Use somente se o financeiro estiver com valores incorretos e voce for ressincronizar do zero.</div>
-    <button class="btn btn-red btn-sm" onclick="limparDadosCompleto()">Limpar dados do painel</button>
-  </div>
+
 </div>
 
 <div id="pane-analise" class="pane">
@@ -806,9 +802,31 @@ async function sincronizarVendas(){
   if(btn){btn.disabled=false;btn.textContent="Sincronizar";}
 }
 
+function getCustoManual(blingId){
+  var custos=JSON.parse(localStorage.getItem("pf_custos_manuais")||"{}");
+  return custos[blingId]||null;
+}
+function setCustoManual(blingId,custo){
+  var custos=JSON.parse(localStorage.getItem("pf_custos_manuais")||"{}");
+  custos[blingId]=custo;
+  localStorage.setItem("pf_custos_manuais",JSON.stringify(custos));
+}
+function editarCusto(blingId,custoAtual,numero){
+  var novo=parseFloat(prompt("Custo do produto para o pedido #"+numero+" (R$):",custoAtual));
+  if(isNaN(novo)||novo<0)return;
+  setCustoManual(blingId,novo);
+  alert("Custo salvo! Sincronize para recalcular o lucro.");
+}
+
 function registrarVendaBling(v){
   var e=getE();
   var idx=e.vendas.findIndex(function(x){return x.blingId===v.id;});
+  // Aplica custo manual se existir
+  var custoManual=getCustoManual(v.id);
+  if(custoManual!==null){
+    v.custoTotal=custoManual;
+    v.lucroReal=v.valor-custoManual-(v.simples||0)-(v.difal||0)-(v.taxaCartao||0);
+  }
   var lucro=v.lucroReal||0;
   if(lucro<=0)return false;
   var caixa=lucro*0.2,resto=lucro-caixa,s1=resto*0.25,s2=resto*0.25,s3=resto*0.5;
@@ -858,7 +876,7 @@ function renderBlingVendas(vendas){
       +"<td style='padding:7px 8px;border-bottom:1px solid var(--border)'>"+(v.contato||"-")+ufTag+"</td>"
       +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px'>"+(v.formaPagamento||"-")+"</td>"
       +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;font-weight:500'>"+fmt(v.valor)+"</td>"
-      +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--text2)'>"+fmt(v.custoTotal||0)+"</td>"
+      +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right'>"+(getCustoManual(v.id)!==null?"<span style='font-size:9px;color:var(--amber);margin-right:3px'>✎</span>":"")+"<span style='color:var(--text2)'>"+fmt(v.custoTotal||0)+"</span>"+"<button onclick=\"editarCusto('"+v.id+"',"+(v.custoTotal||0)+",'"+v.numero+"')\" style='margin-left:6px;padding:2px 6px;font-size:10px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text3);cursor:pointer'>editar</button>"+"</td>"
       +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--amber)'>"+fmt(totalDescontos)+"</td>"
       +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;font-weight:500;color:"+corL+"'>"+fmt(lucro)+"</td>"
       +"</tr>";
