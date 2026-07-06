@@ -876,7 +876,7 @@ function renderBlingVendas(vendas){
       +"<td style='padding:7px 8px;border-bottom:1px solid var(--border)'>"+(v.contato||"-")+ufTag+"</td>"
       +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);color:var(--text2);font-size:10px'>"+(v.formaPagamento||"-")+"</td>"
       +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;font-weight:500'>"+fmt(v.valor)+"</td>"
-      +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right'>"+(getCustoManual(v.id)!==null?"<span style='font-size:9px;color:var(--amber);margin-right:3px'>✎</span>":"")+"<span style='color:var(--text2)'>"+fmt(v.custoTotal||0)+"</span>"+"<button onclick=\"editarCusto('"+v.id+"',"+(v.custoTotal||0)+",'"+v.numero+"')\" style='margin-left:6px;padding:2px 6px;font-size:10px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text3);cursor:pointer'>editar</button>"+"</td>"
+      +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right' id='custo-cell-"+v.id+"'>"+(getCustoManual(v.id)!==null?"<span style='font-size:9px;color:var(--amber);margin-right:3px'>&#9998;</span>":"")+"<span style='color:var(--text2)'>"+fmt(v.custoTotal||0)+"</span> <button data-id='"+v.id+"' data-custo='"+( v.custoTotal||0)+"' data-nr='"+v.numero+"' class='btn-editar-custo' style='margin-left:6px;padding:2px 6px;font-size:10px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text3);cursor:pointer'>editar</button></td>"
       +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--amber)'>"+fmt(totalDescontos)+"</td>"
       +"<td style='padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;font-weight:500;color:"+corL+"'>"+fmt(lucro)+"</td>"
       +"</tr>";
@@ -1056,6 +1056,18 @@ function renderAnalise(){
     histEl.innerHTML=html;
   }
 }
+document.addEventListener("click",function(e){
+  var btn=e.target.closest(".btn-editar-custo");
+  if(!btn)return;
+  var id=btn.getAttribute("data-id");
+  var custo=parseFloat(btn.getAttribute("data-custo"))||0;
+  var nr=btn.getAttribute("data-nr");
+  var novo=parseFloat(prompt("Custo do produto para o pedido #"+nr+" (R$):",custo));
+  if(isNaN(novo)||novo<0)return;
+  setCustoManual(id,novo);
+  alert("Custo salvo! Clique em Sincronizar para recalcular.");
+});
+
 document.getElementById("modal-meta").addEventListener("click",function(e){
   if(e.target===this)fecharModalMeta();
 });
