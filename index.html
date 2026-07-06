@@ -855,7 +855,7 @@ function renderBlingVendas(vendas){
   renderFin();
   var lista=document.getElementById("bling-vendas-lista");if(!lista)return;
   if(vendas.length===0){lista.innerHTML="<div class='empty-state'>Nenhuma venda com NF emitida.</div>";return;}
-  var html="<table style='width:100%;border-collapse:collapse;font-size:12px'><thead><tr>"
+  var html="<table style='width:100%;border-collapse:collapse;font-size:12px;table-layout:auto'><thead><tr>"
     +"<th style='text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Nr</th>"
     +"<th style='text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Data</th>"
     +"<th style='text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)'>Cliente/UF</th>"
