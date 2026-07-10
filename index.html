@@ -190,6 +190,24 @@ tbody tr:last-child td{border-bottom:none}
         </select>
       </div>
     </div>
+    <div style="margin-top:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="checkbox" id="ml-toggle" onchange="toggleML()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--amber)">
+          <span style="font-size:13px;font-weight:500">Calcular taxa Mercado Livre</span>
+        </div>
+        <div id="ml-config" style="display:none;align-items:center;gap:10px">
+          <div style="display:flex;align-items:center;gap:4px">
+            <span style="font-size:11px;color:var(--text2)">Taxa %</span>
+            <input type="number" id="ml-taxa" value="14.5" min="0" max="50" step="0.1" oninput="calcPreco()" style="width:55px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 7px;font-size:12px;color:var(--text)">
+          </div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <span style="font-size:11px;color:var(--text2)">Frete R$</span>
+            <input type="number" id="ml-frete" value="0" min="0" step="1" oninput="calcPreco()" style="width:60px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 7px;font-size:12px;color:var(--text)">
+          </div>
+        </div>
+      </div>
+    </div>
     <div style="margin-top:14px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:14px">
       <div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:10px">Simular: vender por</div>
       <div class="field" style="margin-bottom:10px">
@@ -453,26 +471,42 @@ function custoReal(custo,ipiPct,uf){
   return{total:custo+ipiVl+difalVl,ipiVl:ipiVl,difalVl:difalVl,difalPct:difalPct};
 }
 
+function toggleML(){
+  var ativo=document.getElementById("ml-toggle").checked;
+  var cfg=document.getElementById("ml-config");
+  if(cfg)cfg.style.display=ativo?"flex":"none";
+  calcPreco();
+}
+
 function calcPreco(){
   var custo=parseFloat(document.getElementById("custo").value)||0;
   var ipiPct=parseFloat(document.getElementById("ipi").value)||0;
   var taxaPct=parseFloat(document.getElementById("pagto").value)||0;
+  var mlAtivo=document.getElementById("ml-toggle")&&document.getElementById("ml-toggle").checked;
+  var mlTaxa=mlAtivo?(parseFloat(document.getElementById("ml-taxa").value)||14.5):0;
+  var mlFrete=mlAtivo?(parseFloat(document.getElementById("ml-frete").value)||0):0;
   var c=custoReal(custo,ipiPct,origem);
   var taxa=taxaPct/100;
-  var pMin=c.total/((1-SIMPLES)*(1-taxa));
+  var ml=mlTaxa/100;
+  var custoTotal=c.total+mlFrete;
+  var pMin=custoTotal/((1-SIMPLES)*(1-taxa)*(1-ml));
   autoSug=pMin;autoCusto=c.total;
   document.getElementById("r-custo-real").textContent=fmt(c.total);
   document.getElementById("r-preco-min").textContent=fmt(pMin);
-  var impVl=pMin*SIMPLES,cartVl=pMin*taxa,lucroVl=pMin-c.total-impVl-cartVl;
+  var impVl=pMin*SIMPLES,cartVl=pMin*taxa,mlVl=pMin*ml,lucroVl=pMin-custoTotal-impVl-cartVl-mlVl;
   var margemEf=pMin>0?lucroVl/pMin*100:0;
   var rows=[["Custo de aquisicao",fmt(custo)]];
   if(c.ipiVl>0)rows.push(["IPI ("+ipiPct+"%)",fmt(c.ipiVl)]);
   if(c.difalVl>0)rows.push(["DIFAL ("+(c.difalPct*100)+"%)",fmt(c.difalVl)]);
+  if(mlFrete>0)rows.push(["Frete ML",fmt(mlFrete)]);
   rows.push(["Simples Nacional (4%)",fmt(impVl)]);
   if(taxa>0)rows.push(["Taxa pagamento ("+taxaPct+"%)",fmt(cartVl)]);
+  if(mlAtivo)rows.push(["Taxa ML ("+mlTaxa+"%)",fmt(mlVl)]);
   rows.push(["Lucro minimo (15%)",fmt(lucroVl)]);
   document.getElementById("r-detalhe").innerHTML=rows.map(function(r){return "<div class='drow'><span class='k'>"+r[0]+"</span><span class='v'>"+r[1]+"</span></div>";}).join("");
-  document.getElementById("r-difal-info").innerHTML=c.difalVl>0?"<div class='alert alert-warn' style='margin-top:10px'>DIFAL de "+(c.difalPct*100)+"% aplicado ("+origem+" para MG).</div>":"";
+  var difInfo=c.difalVl>0?"<div class='alert alert-warn' style='margin-top:10px'>DIFAL de "+(c.difalPct*100)+"% aplicado ("+origem+" para MG).</div>":"";
+  var mlInfo=mlAtivo?"<div class='alert alert-warn' style='margin-top:6px'>Taxa ML de "+mlTaxa+"% incluida no calculo."+(mlFrete>0?" Frete: "+fmt(mlFrete)+".")+"</div>":"";
+  document.getElementById("r-difal-info").innerHTML=difInfo+mlInfo;
   var al=document.getElementById("alerta-margem");
   al.innerHTML="";
   var ve=document.getElementById("venda"),ce=document.getElementById("custo-venda");
@@ -488,10 +522,15 @@ function calcVenderPor(){
   var preco=parseFloat(document.getElementById("vp-preco").value)||0;
   if(!preco){document.getElementById("vp-resultado").innerHTML="";return;}
   var taxaPct=parseFloat(document.getElementById("pagto").value)||0;
+  var mlAtivo=document.getElementById("ml-toggle")&&document.getElementById("ml-toggle").checked;
+  var mlTaxa=mlAtivo?(parseFloat(document.getElementById("ml-taxa").value)||14.5):0;
+  var mlFrete=mlAtivo?(parseFloat(document.getElementById("ml-frete").value)||0):0;
   var c=custoReal(custo,ipiPct,origem);
   var taxa=taxaPct/100;
-  var impVl=preco*SIMPLES,cartVl=preco*taxa;
-  var lucro=preco-c.total-impVl-cartVl;
+  var ml=mlTaxa/100;
+  var custoComFrete=c.total+mlFrete;
+  var impVl=preco*SIMPLES,cartVl=preco*taxa,mlVl=preco*ml;
+  var lucro=preco-custoComFrete-impVl-cartVl-mlVl;
   var margemEf=preco>0?lucro/preco*100:0;
   var cor=lucro<0?"var(--red)":margemEf<MARGEM_MIN?"var(--amber)":"var(--green)";
   var status=lucro<0?"PREJUIZO":margemEf<MARGEM_MIN?"MARGEM BAIXA - abaixo de 15%":"VIAVEL";
@@ -502,8 +541,10 @@ function calcVenderPor(){
     +"<span style='font-size:12px;font-weight:700;color:"+cor+";padding:3px 10px;border-radius:5px;border:1px solid "+cor+"'>"+status+"</span>"
     +"</div>"
     +"<div class='drow'><span class='k'>Custo real entrada</span><span class='v'>"+fmt(c.total)+"</span></div>"
+    +(mlFrete>0?"<div class='drow'><span class='k'>Frete ML</span><span class='v'>"+fmt(mlFrete)+"</span></div>":"")
     +"<div class='drow'><span class='k'>Simples Nacional (4%)</span><span class='v'>"+fmt(impVl)+"</span></div>"
     +(taxa>0?"<div class='drow'><span class='k'>Taxa pagamento ("+taxaPct+"%)</span><span class='v'>"+fmt(cartVl)+"</span></div>":"")
+    +(mlAtivo?"<div class='drow'><span class='k'>Taxa ML ("+mlTaxa+"%)</span><span class='v'>"+fmt(mlVl)+"</span></div>":"")
     +"<div class='drow'><span class='k'>Lucro</span><span class='v' style='color:"+cor+";font-weight:700'>"+fmt(lucro)+"</span></div>"
     +"<div class='drow'><span class='k'>Margem efetiva</span><span class='v' style='color:"+cor+";font-weight:700'>"+fmtp(margemEf)+"</span></div>"
     +"<div class='margem-bar' style='margin-top:8px'><div class='margem-fill' style='width:"+Math.max(0,Math.min(100,margemEf)).toFixed(1)+"%;background:"+cor+"'></div></div>"
@@ -825,8 +866,11 @@ function registrarVendaBling(v){
   var custoManual=getCustoManual(v.id);
   if(custoManual!==null){
     v.custoTotal=custoManual;
-    v.lucroReal=v.valor-custoManual-(v.simples||0)-(v.difal||0)-(v.taxaCartao||0);
   }
+  var mlVenda=getMLVenda(v.id);
+  var mlDesconto=mlVenda?(v.valor*(mlVenda.taxa/100))+(mlVenda.frete||0):0;
+  v.lucroReal=v.valor-(v.custoTotal||0)-(v.simples||0)-(v.difal||0)-(v.taxaCartao||0)-mlDesconto;
+  v.mlDesconto=mlDesconto;
   var lucro=v.lucroReal||0;
   if(lucro<=0)return false;
   var caixa=lucro*0.2,resto=lucro-caixa,s1=resto*0.25,s2=resto*0.25,s3=resto*0.5;
@@ -883,7 +927,17 @@ function renderBlingVendas(vendas){
       +"<div style='background:var(--surface);border-radius:6px;padding:8px 10px'><div style='font-size:10px;color:var(--text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em'>Custo"+(temCustoManual?" <span style='color:var(--amber)'>✎</span>":"")+"</div><div style='font-size:13px;font-weight:600'>"+fmt(v.custoTotal||0)+"</div></div>"
       +"<div style='background:var(--surface);border-radius:6px;padding:8px 10px'><div style='font-size:10px;color:var(--text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em'>Impostos+Taxa</div><div style='font-size:13px;font-weight:600;color:var(--amber)'>"+fmt(totalDescontos)+"</div></div>"
       +"</div>"
-      +"<div style='display:flex;justify-content:flex-end'>"
+      +"<div style='display:flex;justify-content:space-between;align-items:center'>"
+      +"<div style='display:flex;align-items:center;gap:8px'>"
+      +"<input type='checkbox' class='ml-venda-check' data-id='"+v.id+"' "+(getMLVenda(v.id)?"checked":"")+" onchange='toggleMLVenda(this)' style='width:14px;height:14px;cursor:pointer;accent-color:var(--amber)'>"
+      +"<span style='font-size:12px;color:var(--text2)'>Venda ML</span>"
+      +"<div class='ml-venda-config' data-id='"+v.id+"' style='display:"+(getMLVenda(v.id)?"flex":"none")+";align-items:center;gap:6px'>"
+      +"<span style='font-size:11px;color:var(--text2)'>Taxa%</span>"
+      +"<input type='number' class='ml-taxa-input' data-id='"+v.id+"' value='"+(getMLVenda(v.id)?getMLVenda(v.id).taxa:14.5)+"' step='0.1' oninput='salvarMLVenda(this)' style='width:50px;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:3px 5px;font-size:11px;color:var(--text)'>"
+      +"<span style='font-size:11px;color:var(--text2)'>Frete R$</span>"
+      +"<input type='number' class='ml-frete-input' data-id='"+v.id+"' value='"+(getMLVenda(v.id)?getMLVenda(v.id).frete:0)+"' step='1' oninput='salvarMLVenda(this)' style='width:55px;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:3px 5px;font-size:11px;color:var(--text)'>"
+      +"</div>"
+      +"</div>"
       +"<button data-id='"+v.id+"' data-custo='"+(v.custoTotal||0)+"' data-nr='"+v.numero+"' class='btn-editar-custo' style='padding:6px 14px;font-size:12px;font-weight:500;border:1px solid var(--border2);border-radius:7px;background:var(--surface);color:var(--text);cursor:pointer;display:flex;align-items:center;gap:5px'>"
       +"&#9998; Editar custo"
       +"</button>"
@@ -1066,6 +1120,36 @@ function renderAnalise(){
     histEl.innerHTML=html;
   }
 }
+function getMLVenda(id){
+  var ml=JSON.parse(localStorage.getItem("pf_ml_vendas")||"{}");
+  return ml[id]||null;
+}
+function toggleMLVenda(cb){
+  var id=cb.getAttribute("data-id");
+  var cfg=document.querySelector(".ml-venda-config[data-id='"+id+"']");
+  if(cb.checked){
+    var ml=JSON.parse(localStorage.getItem("pf_ml_vendas")||"{}");
+    ml[id]={taxa:14.5,frete:0};
+    localStorage.setItem("pf_ml_vendas",JSON.stringify(ml));
+    if(cfg)cfg.style.display="flex";
+  }else{
+    var ml=JSON.parse(localStorage.getItem("pf_ml_vendas")||"{}");
+    delete ml[id];
+    localStorage.setItem("pf_ml_vendas",JSON.stringify(ml));
+    if(cfg)cfg.style.display="none";
+  }
+}
+function salvarMLVenda(input){
+  var id=input.getAttribute("data-id");
+  var ml=JSON.parse(localStorage.getItem("pf_ml_vendas")||"{}");
+  if(!ml[id])ml[id]={taxa:14.5,frete:0};
+  var taxaInput=document.querySelector(".ml-taxa-input[data-id='"+id+"']");
+  var freteInput=document.querySelector(".ml-frete-input[data-id='"+id+"']");
+  if(taxaInput)ml[id].taxa=parseFloat(taxaInput.value)||14.5;
+  if(freteInput)ml[id].frete=parseFloat(freteInput.value)||0;
+  localStorage.setItem("pf_ml_vendas",JSON.stringify(ml));
+}
+
 document.addEventListener("click",function(e){
   var btn=e.target.closest(".btn-editar-custo");
   if(!btn)return;
