@@ -505,7 +505,7 @@ function calcPreco(){
   rows.push(["Lucro minimo (15%)",fmt(lucroVl)]);
   document.getElementById("r-detalhe").innerHTML=rows.map(function(r){return "<div class='drow'><span class='k'>"+r[0]+"</span><span class='v'>"+r[1]+"</span></div>";}).join("");
   var difInfo=c.difalVl>0?"<div class='alert alert-warn' style='margin-top:10px'>DIFAL de "+(c.difalPct*100)+"% aplicado ("+origem+" para MG).</div>":"";
-  var mlInfo=mlAtivo?"<div class='alert alert-warn' style='margin-top:6px'>Taxa ML de "+mlTaxa+"% incluida no calculo."+(mlFrete>0?" Frete: "+fmt(mlFrete)+".")+"</div>":"";
+  var mlInfo=mlAtivo?"<div class='alert alert-warn' style='margin-top:6px'>Taxa ML de "+mlTaxa+"% incluida no calculo."+(mlFrete>0?" Frete: "+fmt(mlFrete)+".":"")+"</div>":"";
   document.getElementById("r-difal-info").innerHTML=difInfo+mlInfo;
   var al=document.getElementById("alerta-margem");
   al.innerHTML="";
