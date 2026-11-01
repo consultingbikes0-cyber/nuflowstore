@@ -496,7 +496,7 @@ function calcPreco(){
   var den15=1-deducoes-MARGEM_MIN/100;
   var pEq=denEq>0?custoTotal/denEq:0;
   var p15=den15>0?custoTotal/den15:0;
-  preco15=p15;
+  preco15=p15;ultimoCustoTotal=custoTotal;ultimasDeducoes=deducoes;
   var pMin=p15>0?p15:pEq;
   autoSug=pMin;autoCusto=c.total;
   document.getElementById("r-custo-real").textContent=fmt(c.total);
@@ -525,7 +525,7 @@ function calcPreco(){
   calcDist();
 }
 
-var preco15=0;
+var preco15=0,ultimoCustoTotal=0,ultimasDeducoes=0.04;
 function usarPreco15(){
   if(!(preco15>0)){alert("Nao ha preco viavel com 15% de margem nessa combinacao de taxas.");return;}
   var el=document.getElementById("vp-preco");
@@ -653,15 +653,15 @@ async function pesquisarPrecoBusca(){
   var nome=document.getElementById("busca-produto").value.trim();if(!nome)return;
   var custo=parseFloat(document.getElementById("custo").value)||0;
   var el=document.getElementById("busca-resultado"),btn=document.getElementById("btn-busca");
-  el.innerHTML="<div style='padding:12px;background:var(--surface2);border-radius:8px;font-size:13px;color:var(--amber)'><span class='spin'></span> Buscando precos no Mercado Livre...</div>";
+  el.innerHTML="<div style='padding:12px;background:var(--surface2);border-radius:8px;font-size:13px;color:var(--amber)'><span class='spin'></span> Buscando precos no Google Shopping...</div>";
   btn.disabled=true;
   try{
     var body={nomeProduto:nome};
-    if(custo>0)body.custoProduto=custo;
+    if(custo>0){body.custoProduto=ultimoCustoTotal;body.deducoes=ultimasDeducoes;}
     var res=await fetch(SB_URL+"/functions/v1/search-price",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+SB_KEY,"apikey":SB_KEY},body:JSON.stringify(body)});
     var data=await res.json();if(!res.ok)throw new Error(data.error||"Erro");
     var html="<div style='background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px'>";
-    html+="<div style='font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px'>Mercado Livre - "+nome+"</div>";
+    html+="<div style='font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px'>Google Shopping - "+nome+"</div>";
     html+="<div class='g3' style='margin-bottom:12px'>";
     html+="<div class='metric'><div class='lbl'>Minimo</div><div class='val r'>"+fmt(data.preco_min)+"</div></div>";
     html+="<div class='metric'><div class='lbl'>Medio</div><div class='val b'>"+fmt(data.preco_medio)+"</div></div>";
@@ -671,12 +671,12 @@ async function pesquisarPrecoBusca(){
       html+="<div style='background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:8px;padding:10px;margin-bottom:10px'>";
       html+="<div style='font-size:11px;color:var(--text3);margin-bottom:3px'>SUGESTAO DE PRECO IDEAL</div>";
       html+="<div style='font-size:20px;font-weight:700;font-family:Syne,sans-serif;color:var(--green)'>"+fmt(data.sugestao_preco)+"</div>";
-      html+="<div style='font-size:11px;color:var(--text2);margin-top:2px'>Competitivo com o mercado e com margem minima de 15%</div>";
+      html+="<div style='font-size:11px;color:var(--text2);margin-top:2px'>3% abaixo do preco medio, nunca abaixo do preco com 15% de margem"+(data.preco_margem_15?" ("+fmt(data.preco_margem_15)+")":"")+"</div>";
       html+="<button class='btn btn-primary btn-sm' style='margin-top:8px' onclick='usarPrecoSugerido("+data.sugestao_preco+")'>Usar este preco no simulador</button>";
       html+="</div>";
     }
     if(data.links&&data.links.length>0){
-      html+="<div style='font-size:11px;color:var(--text3);margin-bottom:5px'>Ver no Mercado Livre:</div>";
+      html+="<div style='font-size:11px;color:var(--text3);margin-bottom:5px'>Ver ofertas:</div>";
       data.links.slice(0,2).forEach(function(l){
         html+="<a href='"+l+"' target='_blank' style='font-size:12px;color:var(--blue);display:block;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"+l+"</a>";
       });
@@ -702,7 +702,7 @@ async function pesquisarPrecoNF(rowId,nome){
     var res=await fetch(SB_URL+"/functions/v1/search-price",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+SB_KEY,"apikey":SB_KEY},body:JSON.stringify({nomeProduto:nome})});
     var data=await res.json();if(!res.ok)throw new Error(data.error||"Erro");
     el.className="price-result found";
-    el.innerHTML="Medio: <strong>"+fmt(data.preco_medio)+"</strong> - "+fmt(data.faixa_min)+" a "+fmt(data.faixa_max);
+    el.innerHTML="Medio: <strong>"+fmt(data.preco_medio)+"</strong> - "+fmt(data.preco_min)+" a "+fmt(data.preco_max);
   }catch(e){el.className="price-result err";el.textContent="Erro ao pesquisar.";}
 }
 
@@ -844,6 +844,10 @@ async function sincronizarVendas(){
     var res=await fetch(SB_URL+"/functions/v1/bling-vendas",{method:"GET",headers:{"Authorization":"Bearer "+SB_KEY,"apikey":SB_KEY}});
     var data=await res.json();if(!res.ok)throw new Error(data.error||"Erro Bling "+res.status);
     renderBlingVendas(data.vendas||[]);
+    if(data.parcial){
+      var lp=document.getElementById("bling-vendas-lista");
+      if(lp)lp.insertAdjacentHTML("afterbegin","<div class='alert alert-warn' style='margin-bottom:10px'>Sincronizacao parcial: "+data.total+" de "+data.totalPedidos+" pedidos processados antes do limite de tempo da funcao. Os demais ficaram de fora desta vez.</div>");
+    }
     var el=document.getElementById("bling-ultima-sync");
     if(el)el.textContent=new Date().toLocaleTimeString("pt-BR");
   }catch(e){
@@ -972,7 +976,7 @@ function renderBlingVendas(vendas){
       +(v.formaPagamento?"<div style='margin-top:4px;display:inline-block;font-size:10px;padding:2px 8px;border-radius:4px;background:var(--surface);border:1px solid var(--border);color:var(--text2)'>"+v.formaPagamento+"</div>":"")
       +"</div>"
       +"<div style='text-align:right'>"
-      +(pend?"<div style='font-size:15px;font-weight:700;font-family:Syne,sans-serif;color:var(--red)'>Custo pendente</div><div style='font-size:11px;color:var(--red)'>fora do financeiro</div>"
+      +(pend?"<div style='font-size:15px;font-weight:700;font-family:Syne,sans-serif;color:var(--red)'>Custo pendente</div><div style='font-size:11px;color:var(--red)'>"+(v.motivoCusto?v.motivoCusto:"fora do financeiro")+"</div>"
         :"<div style='font-size:20px;font-weight:700;font-family:Syne,sans-serif;color:"+corL+"'>"+fmt(lucro)+"</div>"
         +"<div style='font-size:11px;color:"+corL+"'>"+margemPct.toFixed(1)+"% margem"+(lucro<0?" - PREJUIZO":"")+"</div>")
       +"</div>"
@@ -1125,15 +1129,18 @@ function renderAnalise(){
   margemEl.className="val "+(margemMedia>=15?"g":margemMedia>0?"a":"r");
   var prods={};
   e.vendas.forEach(function(v){
-    if(!v.numero)return;
-    var k=v.numero;
-    if(!prods[k])prods[k]={nome:"Pedido #"+k,qtd:0,fat:0};
-    prods[k].qtd++;
-    prods[k].fat+=v.venda||0;
+    if(!v.itens||!v.itens.length)return;
+    v.itens.forEach(function(it){
+      var k=it.codigo||it.produtoId||it.descricao;
+      if(!k)return;
+      if(!prods[k])prods[k]={nome:it.descricao||("Produto "+k),qtd:0,fat:0};
+      prods[k].qtd+=Number(it.quantidade)||1;
+      prods[k].fat+=(Number(it.valor)||0)*(Number(it.quantidade)||1);
+    });
   });
   var ranking=Object.values(prods).sort(function(a,b){return b.qtd-a.qtd;}).slice(0,5);
   var prodEl=document.getElementById("an-produtos-ranking");
-  if(ranking.length===0){prodEl.innerHTML="<div class='empty-state'>Sem dados.</div>";}
+  if(ranking.length===0){prodEl.innerHTML="<div class='empty-state'>Sincronize o Bling para ver os produtos.</div>";}
   else{
     prodEl.innerHTML=ranking.map(function(p,i){
       return "<div class='drow'><span class='k'>"+(i+1)+". "+p.nome+"</span><span class='v'>"+p.qtd+"x - "+fmt(p.fat)+"</span></div>";
