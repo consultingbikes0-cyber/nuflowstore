@@ -221,9 +221,10 @@ tbody tr:last-child td{border-bottom:none}
 
   <div class="card" id="resultado-card">
     <div class="card-title">Resultado</div>
-    <div class="g2" style="margin-bottom:14px">
+    <div class="g3" style="margin-bottom:14px">
       <div class="metric"><div class="lbl">Custo real entrada</div><div class="val b" id="r-custo-real">-</div></div>
-      <div class="metric"><div class="lbl">Preco minimo (margem 15%)</div><div class="val g" id="r-preco-min">-</div></div>
+      <div class="metric"><div class="lbl">Ponto de equilibrio (lucro zero)</div><div class="val a" id="r-preco-eq">-</div></div>
+      <div class="metric"><div class="lbl">Preco com margem 15%</div><div class="val g" id="r-preco-min">-</div><button class="btn btn-sm btn-primary" style="margin-top:6px" onclick="usarPreco15()">Usar no simulador</button></div>
     </div>
     <div id="r-detalhe"></div>
     <div id="r-difal-info"></div>
@@ -489,12 +490,19 @@ function calcPreco(){
   var taxa=taxaPct/100;
   var ml=mlTaxa/100;
   var custoTotal=c.total+mlFrete;
-  var pMin=custoTotal/((1-SIMPLES)*(1-taxa)*(1-ml));
+  // Mesma conta do simulador "Vender por": lucro = P - custo - P*(Simples + taxa + ML)
+  var deducoes=SIMPLES+taxa+ml;
+  var denEq=1-deducoes;
+  var den15=1-deducoes-MARGEM_MIN/100;
+  var pEq=denEq>0?custoTotal/denEq:0;
+  var p15=den15>0?custoTotal/den15:0;
+  preco15=p15;
+  var pMin=p15>0?p15:pEq;
   autoSug=pMin;autoCusto=c.total;
   document.getElementById("r-custo-real").textContent=fmt(c.total);
-  document.getElementById("r-preco-min").textContent=fmt(pMin);
+  document.getElementById("r-preco-eq").textContent=pEq>0?fmt(pEq):"Inviavel";
+  document.getElementById("r-preco-min").textContent=p15>0?fmt(p15):"Inviavel";
   var impVl=pMin*SIMPLES,cartVl=pMin*taxa,mlVl=pMin*ml,lucroVl=pMin-custoTotal-impVl-cartVl-mlVl;
-  var margemEf=pMin>0?lucroVl/pMin*100:0;
   var rows=[["Custo de aquisicao",fmt(custo)]];
   if(c.ipiVl>0)rows.push(["IPI ("+ipiPct+"%)",fmt(c.ipiVl)]);
   if(c.difalVl>0)rows.push(["DIFAL ("+(c.difalPct*100)+"%)",fmt(c.difalVl)]);
@@ -502,7 +510,8 @@ function calcPreco(){
   rows.push(["Simples Nacional (4%)",fmt(impVl)]);
   if(taxa>0)rows.push(["Taxa pagamento ("+taxaPct+"%)",fmt(cartVl)]);
   if(mlAtivo)rows.push(["Taxa ML ("+mlTaxa+"%)",fmt(mlVl)]);
-  rows.push(["Lucro minimo (15%)",fmt(lucroVl)]);
+  rows.push(["Lucro no preco com 15%",fmt(lucroVl)]);
+  if(p15<=0)rows.push(["Atencao","Taxas + Simples + 15% passam de 100% da venda"]);
   document.getElementById("r-detalhe").innerHTML=rows.map(function(r){return "<div class='drow'><span class='k'>"+r[0]+"</span><span class='v'>"+r[1]+"</span></div>";}).join("");
   var difInfo=c.difalVl>0?"<div class='alert alert-warn' style='margin-top:10px'>DIFAL de "+(c.difalPct*100)+"% aplicado ("+origem+" para MG).</div>":"";
   var mlInfo=mlAtivo?"<div class='alert alert-warn' style='margin-top:6px'>Taxa ML de "+mlTaxa+"% incluida no calculo."+(mlFrete>0?" Frete: "+fmt(mlFrete)+".":"")+"</div>":"";
@@ -514,6 +523,13 @@ function calcPreco(){
   if(!ce.dataset.manual)ce.placeholder=fmt(c.total);
   calcVenderPor();
   calcDist();
+}
+
+var preco15=0;
+function usarPreco15(){
+  if(!(preco15>0)){alert("Nao ha preco viavel com 15% de margem nessa combinacao de taxas.");return;}
+  var el=document.getElementById("vp-preco");
+  el.value=preco15.toFixed(2);calcVenderPor();
 }
 
 function calcVenderPor(){
@@ -843,9 +859,16 @@ async function sincronizarVendas(){
   if(btn){btn.disabled=false;btn.textContent="Sincronizar";}
 }
 
+// Como tratar venda com prejuizo nos saldos:
+// "proporcional" = abate do caixa e dos socios na mesma proporcao do lucro (20/80 -> 25/25/50)
+// "caixa"        = o prejuizo inteiro sai do caixa da empresa
+var PREJUIZO_MODO="proporcional";
+var CUSTO_FALLBACK_SUSPEITO=749; // valor padrao antigo da bling-vendas; remover depois de corrigir a funcao
+var ultimasVendasBling=[];
+
 function getCustoManual(blingId){
   var custos=JSON.parse(localStorage.getItem("pf_custos_manuais")||"{}");
-  return custos[blingId]||null;
+  return Object.prototype.hasOwnProperty.call(custos,blingId)?custos[blingId]:null;
 }
 function setCustoManual(blingId,custo){
   var custos=JSON.parse(localStorage.getItem("pf_custos_manuais")||"{}");
@@ -853,61 +876,92 @@ function setCustoManual(blingId,custo){
   localStorage.setItem("pf_custos_manuais",JSON.stringify(custos));
 }
 function editarCusto(blingId,custoAtual,numero){
-  var novo=parseFloat(prompt("Custo do produto para o pedido #"+numero+" (R$):",custoAtual));
+  var novo=parseFloat(String(prompt("Custo do produto para o pedido #"+numero+" (R$):",custoAtual)||"").replace(",","."));
   if(isNaN(novo)||novo<0)return;
   setCustoManual(blingId,novo);
-  alert("Custo salvo! Sincronize para recalcular o lucro.");
+  recalcularBling();
+}
+function recalcularBling(){
+  if(ultimasVendasBling.length>0)renderBlingVendas(ultimasVendasBling);
+}
+
+function distribuirLucro(lucro){
+  if(lucro<0&&PREJUIZO_MODO==="caixa")return{caixa:lucro,s1:0,s2:0,s3:0};
+  var caixa=lucro*0.2,resto=lucro-caixa;
+  return{caixa:caixa,s1:resto*0.25,s2:resto*0.25,s3:resto*0.5};
+}
+
+function removerRegistroBling(e,blingId){
+  var idx=e.vendas.findIndex(function(x){return x.blingId===blingId;});
+  if(idx<0)return;
+  var old=e.vendas[idx];
+  e.caixa-=old.caixa||0;e.saldos.henrique-=old.s1||0;e.saldos.matheus-=old.s2||0;e.saldos.nuflow-=old.s3||0;
+  e.vendas.splice(idx,1);
 }
 
 function registrarVendaBling(v){
-  var e=getE();
-  var idx=e.vendas.findIndex(function(x){return x.blingId===v.id;});
-  // Aplica custo manual se existir
+  // Guarda o custo que veio do Bling uma unica vez, para o custo manual nao sobrescrever o original
+  if(!("custoOriginal" in v))v.custoOriginal=(v.custoTotal===undefined?null:v.custoTotal);
   var custoManual=getCustoManual(v.id);
-  if(custoManual!==null){
-    v.custoTotal=custoManual;
-  }
+  var custo=custoManual!==null?custoManual:v.custoOriginal;
+  var custoNum=(custo===null||custo===undefined||custo==="")?NaN:Number(custo);
+  v.custoManual=custoManual!==null;
+  v.custoPendente=isNaN(custoNum);
+  v.custoSuspeito=!v.custoManual&&!v.custoPendente&&custoNum===CUSTO_FALLBACK_SUSPEITO;
+  v.custoTotal=v.custoPendente?null:custoNum;
   var mlVenda=getMLVenda(v.id);
   var mlDesconto=mlVenda?(v.valor*(mlVenda.taxa/100))+(mlVenda.frete||0):0;
-  v.lucroReal=v.valor-(v.custoTotal||0)-(v.simples||0)-(v.difal||0)-(v.taxaCartao||0)-mlDesconto;
   v.mlDesconto=mlDesconto;
-  var lucro=v.lucroReal||0;
-  if(lucro<=0)return false;
-  var caixa=lucro*0.2,resto=lucro-caixa,s1=resto*0.25,s2=resto*0.25,s3=resto*0.5;
-  var registro={data:v.data,venda:v.valor,custo:v.custoTotal||0,lucro:lucro,caixa:caixa,s1:s1,s2:s2,s3:s3,origem:"bling",blingId:v.id,numero:v.numero,simples:v.simples||0,difal:v.difal||0,taxaCartao:v.taxaCartao||0,formaPagamento:v.formaPagamento||'',ufCliente:v.ufCliente||'MG'};
-  if(idx>=0){
-    var old=e.vendas[idx];
-    e.caixa-=old.caixa;e.saldos.henrique-=old.s1;e.saldos.matheus-=old.s2;e.saldos.nuflow-=old.s3;
-    e.vendas.splice(idx,1);
+  var e=getE();
+  removerRegistroBling(e,v.id);
+  if(v.custoPendente){
+    // Sem custo nao ha lucro confiavel: fica fora do financeiro ate o custo ser informado
+    v.lucroReal=null;
+    saveE(e);return false;
   }
-  e.caixa+=caixa;e.saldos.henrique+=s1;e.saldos.matheus+=s2;e.saldos.nuflow+=s3;
+  var lucro=v.valor-custoNum-(v.simples||0)-(v.difal||0)-(v.taxaCartao||0)-mlDesconto;
+  v.lucroReal=lucro;
+  var d=distribuirLucro(lucro);
+  var registro={data:v.data,venda:v.valor,custo:custoNum,lucro:lucro,caixa:d.caixa,s1:d.s1,s2:d.s2,s3:d.s3,origem:"bling",blingId:v.id,numero:v.numero,simples:v.simples||0,difal:v.difal||0,taxaCartao:v.taxaCartao||0,mlDesconto:mlDesconto,formaPagamento:v.formaPagamento||"",ufCliente:v.ufCliente||"MG",itens:v.itens||null};
+  e.caixa+=d.caixa;e.saldos.henrique+=d.s1;e.saldos.matheus+=d.s2;e.saldos.nuflow+=d.s3;
   e.vendas.unshift(registro);
   saveE(e);return true;
 }
 
 function renderBlingVendas(vendas){
+  ultimasVendasBling=vendas;
+  // Registra primeiro (aplica custo manual e ML), depois soma os totais ja corrigidos
+  vendas.forEach(function(v){registrarVendaBling(v);});
+  renderFin();
+  var pendentes=vendas.filter(function(v){return v.custoPendente;});
+  var validas=vendas.filter(function(v){return !v.custoPendente;});
   var tv=vendas.reduce(function(a,v){return a+(v.valor||0);},0);
-  var tl=vendas.reduce(function(a,v){return a+(v.lucroReal||0);},0);
+  var tl=validas.reduce(function(a,v){return a+(v.lucroReal||0);},0);
   var ts=vendas.reduce(function(a,v){return a+(v.simples||0);},0);
   var td=vendas.reduce(function(a,v){return a+(v.difal||0);},0);
   var tc=vendas.reduce(function(a,v){return a+(v.taxaCartao||0);},0);
   var elV=document.getElementById("bling-total-valor"),elQ=document.getElementById("bling-total-qtd"),elL=document.getElementById("bling-lucro-total");
   var elS=document.getElementById("bling-total-simples"),elD=document.getElementById("bling-total-difal"),elC=document.getElementById("bling-total-cartao");
-  if(elV)elV.textContent=fmt(tv);if(elQ)elQ.textContent=vendas.length;if(elL)elL.textContent=fmt(tl);
+  if(elV)elV.textContent=fmt(tv);if(elQ)elQ.textContent=vendas.length;
+  if(elL){elL.textContent=fmt(tl)+(pendentes.length?" *":"");elL.className="val "+(tl<0?"r":"g");elL.title=pendentes.length?pendentes.length+" pedido(s) sem custo fora da soma":"";}
   if(elS)elS.textContent=fmt(ts);if(elD)elD.textContent=fmt(td);if(elC)elC.textContent=fmt(tc);
-  vendas.forEach(function(v){registrarVendaBling(v);});
-  renderFin();
   var lista=document.getElementById("bling-vendas-lista");if(!lista)return;
   if(vendas.length===0){lista.innerHTML="<div class='empty-state'>Nenhuma venda com NF emitida.</div>";return;}
-  var html="<div style='display:flex;flex-direction:column;gap:8px'>";
+  var html="";
+  if(pendentes.length)html+="<div class='alert alert-danger' style='margin-bottom:10px'>"+pendentes.length+" pedido(s) sem custo do produto no Bling. Eles ficam fora do lucro e do financeiro ate voce clicar em Editar custo.</div>";
+  var suspeitos=vendas.filter(function(v){return v.custoSuspeito;});
+  if(suspeitos.length)html+="<div class='alert alert-warn' style='margin-bottom:10px'>"+suspeitos.length+" pedido(s) com custo de "+fmt(CUSTO_FALLBACK_SUSPEITO)+", que e o valor padrao da funcao quando nao acha o custo. Confira esses pedidos.</div>";
+  html+="<div style='display:flex;flex-direction:column;gap:8px'>";
   vendas.forEach(function(v){
-    var lucro=v.lucroReal||0;
+    var pend=v.custoPendente;
+    var lucro=pend?0:(v.lucroReal||0);
     var margemPct=v.valor>0?(lucro/v.valor*100):0;
-    var corL=lucro<0?"var(--red)":margemPct<15&&lucro>0?"var(--amber)":"var(--green)";
+    var corL=pend?"var(--red)":lucro<0?"var(--red)":margemPct<MARGEM_MIN?"var(--amber)":"var(--green)";
     var ufTag=v.ufCliente&&v.ufCliente!=="MG"?"<span style='font-size:10px;padding:1px 6px;border-radius:4px;background:var(--blue-dim);color:var(--blue);margin-left:5px'>"+v.ufCliente+"</span>":"";
-    var totalDescontos=(v.simples||0)+(v.difal||0)+(v.taxaCartao||0);
-    var temCustoManual=getCustoManual(v.id)!==null;
-    html+="<div style='background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px'>"
+    var totalDescontos=(v.simples||0)+(v.difal||0)+(v.taxaCartao||0)+(v.mlDesconto||0);
+    var temCustoManual=v.custoManual;
+    var borda=pend?"rgba(248,113,113,.5)":v.custoSuspeito?"rgba(251,191,36,.5)":"var(--border)";
+    html+="<div style='background:var(--surface2);border:1px solid "+borda+";border-radius:10px;padding:14px'>"
       +"<div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px'>"
       +"<div>"
       +"<div style='display:flex;align-items:center;gap:8px;margin-bottom:3px'>"
@@ -918,14 +972,15 @@ function renderBlingVendas(vendas){
       +(v.formaPagamento?"<div style='margin-top:4px;display:inline-block;font-size:10px;padding:2px 8px;border-radius:4px;background:var(--surface);border:1px solid var(--border);color:var(--text2)'>"+v.formaPagamento+"</div>":"")
       +"</div>"
       +"<div style='text-align:right'>"
-      +"<div style='font-size:20px;font-weight:700;font-family:Syne,sans-serif;color:"+corL+"'>"+fmt(lucro)+"</div>"
-      +"<div style='font-size:11px;color:"+corL+"'>"+margemPct.toFixed(1)+"% margem</div>"
+      +(pend?"<div style='font-size:15px;font-weight:700;font-family:Syne,sans-serif;color:var(--red)'>Custo pendente</div><div style='font-size:11px;color:var(--red)'>fora do financeiro</div>"
+        :"<div style='font-size:20px;font-weight:700;font-family:Syne,sans-serif;color:"+corL+"'>"+fmt(lucro)+"</div>"
+        +"<div style='font-size:11px;color:"+corL+"'>"+margemPct.toFixed(1)+"% margem"+(lucro<0?" - PREJUIZO":"")+"</div>")
       +"</div>"
       +"</div>"
       +"<div style='display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px'>"
       +"<div style='background:var(--surface);border-radius:6px;padding:8px 10px'><div style='font-size:10px;color:var(--text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em'>Venda</div><div style='font-size:13px;font-weight:600;color:var(--blue)'>"+fmt(v.valor)+"</div></div>"
-      +"<div style='background:var(--surface);border-radius:6px;padding:8px 10px'><div style='font-size:10px;color:var(--text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em'>Custo"+(temCustoManual?" <span style='color:var(--amber)'>✎</span>":"")+"</div><div style='font-size:13px;font-weight:600'>"+fmt(v.custoTotal||0)+"</div></div>"
-      +"<div style='background:var(--surface);border-radius:6px;padding:8px 10px'><div style='font-size:10px;color:var(--text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em'>Impostos+Taxa</div><div style='font-size:13px;font-weight:600;color:var(--amber)'>"+fmt(totalDescontos)+"</div></div>"
+      +"<div style='background:var(--surface);border-radius:6px;padding:8px 10px'><div style='font-size:10px;color:var(--text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em'>Custo"+(temCustoManual?" <span style='color:var(--amber)'>✎</span>":"")+"</div><div style='font-size:13px;font-weight:600;color:"+(pend?"var(--red)":v.custoSuspeito?"var(--amber)":"var(--text)")+"'>"+(pend?"nao encontrado":fmt(v.custoTotal)+(v.custoSuspeito?" ?":""))+"</div></div>"
+      +"<div style='background:var(--surface);border-radius:6px;padding:8px 10px'><div style='font-size:10px;color:var(--text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em'>Impostos+Taxas</div><div style='font-size:13px;font-weight:600;color:var(--amber)'>"+fmt(totalDescontos)+"</div></div>"
       +"</div>"
       +"<div style='display:flex;justify-content:space-between;align-items:center'>"
       +"<div style='display:flex;align-items:center;gap:8px'>"
@@ -933,12 +988,12 @@ function renderBlingVendas(vendas){
       +"<span style='font-size:12px;color:var(--text2)'>Venda ML</span>"
       +"<div class='ml-venda-config' data-id='"+v.id+"' style='display:"+(getMLVenda(v.id)?"flex":"none")+";align-items:center;gap:6px'>"
       +"<span style='font-size:11px;color:var(--text2)'>Taxa%</span>"
-      +"<input type='number' class='ml-taxa-input' data-id='"+v.id+"' value='"+(getMLVenda(v.id)?getMLVenda(v.id).taxa:14.5)+"' step='0.1' oninput='salvarMLVenda(this)' style='width:50px;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:3px 5px;font-size:11px;color:var(--text)'>"
+      +"<input type='number' class='ml-taxa-input' data-id='"+v.id+"' value='"+(getMLVenda(v.id)?getMLVenda(v.id).taxa:14.5)+"' step='0.1' onchange='salvarMLVenda(this)' style='width:50px;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:3px 5px;font-size:11px;color:var(--text)'>"
       +"<span style='font-size:11px;color:var(--text2)'>Frete R$</span>"
-      +"<input type='number' class='ml-frete-input' data-id='"+v.id+"' value='"+(getMLVenda(v.id)?getMLVenda(v.id).frete:0)+"' step='1' oninput='salvarMLVenda(this)' style='width:55px;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:3px 5px;font-size:11px;color:var(--text)'>"
+      +"<input type='number' class='ml-frete-input' data-id='"+v.id+"' value='"+(getMLVenda(v.id)?getMLVenda(v.id).frete:0)+"' step='1' onchange='salvarMLVenda(this)' style='width:55px;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:3px 5px;font-size:11px;color:var(--text)'>"
       +"</div>"
       +"</div>"
-      +"<button data-id='"+v.id+"' data-custo='"+(v.custoTotal||0)+"' data-nr='"+v.numero+"' class='btn-editar-custo' style='padding:6px 14px;font-size:12px;font-weight:500;border:1px solid var(--border2);border-radius:7px;background:var(--surface);color:var(--text);cursor:pointer;display:flex;align-items:center;gap:5px'>"
+      +"<button data-id='"+v.id+"' data-custo='"+(pend?"":v.custoTotal)+"' data-nr='"+v.numero+"' class='btn-editar-custo' style='padding:6px 14px;font-size:12px;font-weight:500;border:1px solid var(--border2);border-radius:7px;background:var(--surface);color:var(--text);cursor:pointer;display:flex;align-items:center;gap:5px'>"
       +"&#9998; Editar custo"
       +"</button>"
       +"</div>"
@@ -1061,10 +1116,12 @@ function renderAnalise(){
   document.getElementById("an-pct-qtd").textContent=pctQtd.toFixed(0)+"% da meta";
   document.getElementById("an-pct-fat").innerHTML=pctFat.toFixed(0)+"% de <span id='an-meta-fat-label'>"+fmt(meta.fat)+"</span>";
   document.getElementById("an-ticket-medio").textContent=ticketMedio>0?fmt(ticketMedio):"-";
-  document.getElementById("an-lucro-mes").textContent=lucroMes>0?fmt(lucroMes):"-";
+  var lucroEl=document.getElementById("an-lucro-mes");
+  lucroEl.textContent=qtdMes>0?fmt(lucroMes):"-";
+  lucroEl.className="val "+(lucroMes<0?"r":"g");
   document.getElementById("an-impostos-mes").textContent=impostosMes>0?fmt(impostosMes):"-";
   var margemEl=document.getElementById("an-margem-media");
-  margemEl.textContent=margemMedia>0?fmtp(margemMedia):"-";
+  margemEl.textContent=qtdMes>0?fmtp(margemMedia):"-";
   margemEl.className="val "+(margemMedia>=15?"g":margemMedia>0?"a":"r");
   var prods={};
   e.vendas.forEach(function(v){
@@ -1138,6 +1195,7 @@ function toggleMLVenda(cb){
     localStorage.setItem("pf_ml_vendas",JSON.stringify(ml));
     if(cfg)cfg.style.display="none";
   }
+  recalcularBling();
 }
 function salvarMLVenda(input){
   var id=input.getAttribute("data-id");
@@ -1145,21 +1203,19 @@ function salvarMLVenda(input){
   if(!ml[id])ml[id]={taxa:14.5,frete:0};
   var taxaInput=document.querySelector(".ml-taxa-input[data-id='"+id+"']");
   var freteInput=document.querySelector(".ml-frete-input[data-id='"+id+"']");
-  if(taxaInput)ml[id].taxa=parseFloat(taxaInput.value)||14.5;
-  if(freteInput)ml[id].frete=parseFloat(freteInput.value)||0;
+  if(taxaInput){var t=parseFloat(taxaInput.value);ml[id].taxa=isNaN(t)?14.5:t;}
+  if(freteInput){var f=parseFloat(freteInput.value);ml[id].frete=isNaN(f)?0:f;}
   localStorage.setItem("pf_ml_vendas",JSON.stringify(ml));
+  recalcularBling();
 }
 
 document.addEventListener("click",function(e){
   var btn=e.target.closest(".btn-editar-custo");
   if(!btn)return;
   var id=btn.getAttribute("data-id");
-  var custo=parseFloat(btn.getAttribute("data-custo"))||0;
+  var custo=btn.getAttribute("data-custo");
   var nr=btn.getAttribute("data-nr");
-  var novo=parseFloat(prompt("Custo do produto para o pedido #"+nr+" (R$):",custo));
-  if(isNaN(novo)||novo<0)return;
-  setCustoManual(id,novo);
-  alert("Custo salvo! Clique em Sincronizar para recalcular.");
+  editarCusto(id,custo,nr);
 });
 
 document.getElementById("modal-meta").addEventListener("click",function(e){
